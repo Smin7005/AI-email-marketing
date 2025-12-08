@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { emailEvents } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { suppressionService } from '@/lib/services/suppression';
 
 /**
  * Handle email events from Resend
@@ -170,8 +171,12 @@ async function processBouncedEvent(data: any) {
 
     // Add to suppression list for hard bounces
     if (bounce_type === 'hard') {
-      // This would call the suppression service
-      console.log(`Adding ${campaignItem.businessEmail} to suppression list due to hard bounce`);
+      await suppressionService.addToSuppressionList(campaignItem.organizationId, {
+        email: campaignItem.businessEmail,
+        type: 'bounced',
+        reason: 'Hard bounce',
+        campaignId: campaignItem.campaignId
+      });
     }
 
     console.log(`Recorded bounced event for message ${messageId}`);
@@ -201,7 +206,12 @@ async function processComplainedEvent(data: any) {
     });
 
     // Add to suppression list
-    console.log(`Adding ${campaignItem.businessEmail} to suppression list due to spam complaint`);
+    await suppressionService.addToSuppressionList(campaignItem.organizationId, {
+      email: campaignItem.businessEmail,
+      type: 'complained',
+      reason: feedback_type || 'Spam complaint',
+      campaignId: campaignItem.campaignId
+    });
 
     console.log(`Recorded complained event for message ${messageId}`);
   }

@@ -9,6 +9,7 @@ import { BusinessSearchInput } from '@/components/businesses/BusinessSearchInput
 import BusinessList from '@/components/businesses/BusinessList';
 import { useBusinesses } from '@/hooks/useBusinesses';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { QuotaDisplay } from '@/components/quota/QuotaDisplay';
 
 // Mock data for available cities and industries
 // In a real app, these would come from an API
@@ -113,6 +114,11 @@ export default function BusinessesPage() {
         <p className="text-gray-600">
           Search and filter Australian businesses to create targeted email campaigns
         </p>
+      </div>
+
+      {/* Quota Display Widget */}
+      <div className="mb-6">
+        <QuotaDisplay />
       </div>
 
       <Card className="mb-6">

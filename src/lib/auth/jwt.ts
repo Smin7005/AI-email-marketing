@@ -171,3 +171,11 @@ export const TokenTypes = {
   UNSUBSCRIBE: 'unsubscribe',
   TRACKING: 'tracking',
 } as const;
+
+export const jwtUtils = {
+  generateUnsubscribeToken,
+  verifyUnsubscribeToken,
+  generateEmailTrackingToken,
+  verifyEmailTrackingToken,
+  TokenTypes
+};

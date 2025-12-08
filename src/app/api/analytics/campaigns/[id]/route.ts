@@ -25,21 +25,14 @@ export async function GET(
     );
 
     // Get campaign analytics
-    const analytics = await analyticsService.getCampaignAnalytics(
+    const analytics = await analyticsService.getCampaignMetrics(
       auth.organizationId,
       campaignId
     );
 
-    // Get engagement trends (last 30 days)
-    const trends = await analyticsService.getEngagementTrends(
-      auth.organizationId,
-      30
-    );
-
     return NextResponse.json({
       metrics,
-      analytics,
-      trends,
+      analytics
     });
   } catch (error) {
     console.error('Error fetching campaign analytics:', error);

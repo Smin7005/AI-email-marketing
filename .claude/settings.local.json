@@ -39,7 +39,8 @@
       "Bash(curl -s http://localhost:3007/api/test)",
       "Bash(curl:*)",
       "Bash(find:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

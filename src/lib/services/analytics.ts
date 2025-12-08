@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { campaigns, campaignItems, emailEvents, organization_quotas } from '../db/schema';
+import { campaigns, campaignItems, emailEvents, organizationQuotas } from '../db/schema';
 import { and, eq, count, sum, desc, asc, sql, between } from 'drizzle-orm';
 import { withOrganization } from '../db/tenant';
 

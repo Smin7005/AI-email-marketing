@@ -1,2 +1,3 @@
 export { batchGenerateEmails } from './generate-emails';
 export { sendCampaignBatch } from './send-emails';
+export { resetMonthlyQuotas } from './reset-quotas';

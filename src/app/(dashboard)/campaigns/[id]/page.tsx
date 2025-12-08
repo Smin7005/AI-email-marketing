@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import CampaignActivity from '@/components/campaign/campaign-activity';
 
 interface Campaign {
   id: number;
@@ -15,7 +16,7 @@ interface Campaign {
   serviceDescription: string;
   emailTone: string;
   status: 'draft' | 'generating' | 'ready' | 'sending' | 'sent';
-  businessCount: number;
+  totalRecipients: number;
   generatedCount: number;
   createdAt: string;
   updatedAt: string;
@@ -210,8 +211,8 @@ export default function CampaignDetailPage() {
   }
 
   const progressPercentage =
-    campaign.businessCount > 0
-      ? Math.round((campaign.generatedCount / campaign.businessCount) * 100)
+    campaign.totalRecipients > 0
+      ? Math.round((campaign.generatedCount / campaign.totalRecipients) * 100)
       : 0;
 
   return (
@@ -261,7 +262,7 @@ export default function CampaignDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {campaign.businessCount}
+                {campaign.totalRecipients}
               </div>
             </CardContent>
           </Card>
@@ -272,7 +273,7 @@ export default function CampaignDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {campaign.generatedCount}/{campaign.businessCount}
+                {campaign.generatedCount}/{campaign.totalRecipients}
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                 <div
@@ -370,6 +371,13 @@ export default function CampaignDetailPage() {
       </div>
 
       <Separator className="my-6" />
+
+      {/* Recent Activity Section */}
+      {(campaign.status === 'sent' || campaign.status === 'sending') && (
+        <div className="mb-8">
+          <CampaignActivity campaignId={campaignId} />
+        </div>
+      )}
 
       <div>
         <h2 className="text-2xl font-bold mb-4">Campaign Emails</h2>

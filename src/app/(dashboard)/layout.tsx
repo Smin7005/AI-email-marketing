@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
+import DashboardHeader from '@/components/dashboard-header';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -16,7 +17,8 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <main>{children}</main>
+      <DashboardHeader />
+      <main className="py-8">{children}</main>
     </div>
   );
 }
