@@ -39,7 +39,7 @@
 - [ ] T011 [P] Set up Clerk sign-up page in `src/app/(auth)/sign-up/[[...sign-up]]/page.tsx`
 - [x] T012 Install Inngest SDK and create client in `src/lib/inngest/client.ts`
 - [x] T013 Create Inngest serve endpoint in `src/app/api/inngest/route.ts`
-- [x] T014 Install AWS SES SDK and configure in `src/lib/email/aws-ses.ts`
+- [x] T014 Install Resend SDK and configure in `src/lib/email/resend.ts`
 - [x] T015 Install OpenAI SDK and configure in `src/lib/ai/openai.ts`
 - [x] T016 Create base error handling utility in `src/lib/utils/errors.ts`
 - [x] T017 Set up logging utility in `src/lib/utils/logger.ts`
@@ -55,32 +55,32 @@
 
 ### Phase 1.1: Drizzle Schema & Migrations
 
-- [ ] T019 Create Drizzle schema file `src/lib/db/schema.ts` with all 5 tables (businesses, campaigns, campaign_items, email_events, suppression_list)
-- [ ] T020 [P] Add database indexes for performance in `src/lib/db/schema.ts`
-- [ ] T021 Create Drizzle config file `drizzle.config.ts`
-- [ ] T022 Create migration script `src/lib/db/migrate.ts`
-- [ ] T023 Run initial migration: `npm run db:generate` and `npm run db:push`
-- [ ] T024 Create database types file `src/lib/db/types.ts` from schema
+- [x] T019 Create Drizzle schema file `src/lib/db/schema.ts` with all 8 tables (businesses, target_lists, target_list_items, campaigns, campaign_items, email_events, suppression_list, organization_quotas, user_preferences)
+- [x] T020 [P] Add database indexes for performance in `src/lib/db/schema.ts`
+- [x] T021 Create Drizzle config file `drizzle.config.ts`
+- [x] T022 Create migration script `src/lib/db/migrate.ts`
+- [x] T023 Run initial migration: `npm run db:generate` and `npm run db:push`
+- [x] T024 Create database types file `src/lib/db/types.ts` from schema
 
 **Verification**: Verify tables are created in Supabase dashboard. Run `npm run db:studio` to inspect schema.
 
 ### Phase 1.2: Seed Data for Australian Businesses
 
-- [ ] T025 Create seed data script `src/lib/db/seed/businesses.ts` with 100+ Australian businesses
-- [ ] T026 [P] Create sample data for major cities (Sydney, Melbourne, Brisbane, Perth, Adelaide)
-- [ ] T027 [P] Create sample data for key industries (IT Services, Cleaning, Marketing, etc.)
-- [ ] T028 Create seed runner script `src/lib/db/seed/index.ts`
-- [ ] T029 Run seed script: `npm run db:seed`
-- [ ] T030 Create seed verification query in `src/lib/db/verify-seed.ts`
+- [x] T025 Create seed data script `src/lib/db/seed/businesses.ts` with 100+ Australian businesses
+- [x] T026 [P] Create sample data for major cities (Sydney, Melbourne, Brisbane, Perth, Adelaide)
+- [x] T027 [P] Create sample data for key industries (IT Services, Cleaning, Marketing, etc.)
+- [x] T028 Create seed runner script `src/lib/db/seed/index.ts`
+- [x] T029 Run seed script: `npm run db:seed`
+- [x] T030 Create seed verification query in `src/lib/db/verify-seed.ts`
 
 **Verification**: Run `SELECT COUNT(*) FROM businesses` in Supabase and verify 100+ records exist. Check that cities and industries are properly distributed.
 
 ### Phase 1.3: Database Utilities
 
-- [ ] T031 Create database connection pool manager in `src/lib/db/pool.ts`
-- [ ] T032 Create base repository pattern in `src/lib/db/repository.ts`
-- [ ] T033 Create organization-scoped query helper in `src/lib/db/tenant.ts`
-- [ ] T034 Create database transaction helper in `src/lib/db/transaction.ts`
+- [x] T031 Create database connection pool manager in `src/lib/db/pool.ts`
+- [x] T032 Create base repository pattern in `src/lib/db/repository.ts`
+- [x] T033 Create organization-scoped query helper in `src/lib/db/tenant.ts`
+- [x] T034 Create database transaction helper in `src/lib/db/transaction.ts`
 
 **Verification**: Test database connection with a simple query. Verify tenant isolation works correctly.
 
@@ -94,44 +94,55 @@
 
 ### Phase 2.1: Authentication & Authorization
 
-- [ ] T035 Create auth context provider in `src/lib/auth/context.tsx`
-- [ ] T036 Create organization hook in `src/lib/auth/use-organization.ts`
+- [x] T035 Create auth context provider in `src/lib/auth/context.tsx`
+- [x] T036 Create organization hook in `src/lib/auth/use-organization.ts`
 - [ ] T037 Create protected route wrapper in `src/lib/auth/protected.tsx`
-- [ ] T038 Create API route authentication helper in `src/lib/auth/api.ts`
-- [ ] T039 Add organization context to all API routes in `src/app/api/route.ts`
+- [x] T038 Create API route authentication helper in `src/lib/auth/api.ts`
+- [x] T039 Add organization context to all API routes in `src/app/api/route.ts`
 
 **Verification**: Test that only authenticated users can access protected routes. Verify organization_id is available in all contexts.
 
 ### Phase 2.2: Core Services
 
-- [ ] T040 Create business service in `src/lib/services/business.ts` with search functionality
-- [ ] T041 Create campaign service in `src/lib/services/campaign.ts` with CRUD operations
-- [ ] T042 Create email service in `src/lib/services/email.ts` for sending
-- [ ] T043 Create analytics service in `src/lib/services/analytics.ts` for metrics
-- [ ] T044 Create quota service in `src/lib/services/quota.ts` for usage tracking
-- [ ] T045 Create suppression service in `src/lib/services/suppression.ts` for unsubscribe management
+- [x] T040 Create business service in `src/lib/services/business.ts` with search functionality
+- [x] T041 Create campaign service in `src/lib/services/campaign.ts` with CRUD operations
+- [x] T042 Create email service in `src/lib/services/email.ts` for sending
+- [x] T043 Create analytics service in `src/lib/services/analytics.ts` for metrics
+- [x] T044 Create quota service in `src/lib/services/quota.ts` for usage tracking
+- [x] T045 Create suppression service in `src/lib/services/suppression.ts` for unsubscribe management
 
 **Verification**: Test each service with unit tests. Verify all services respect tenant isolation.
 
 ### Phase 2.3: Inngest Functions
 
-- [ ] T046 Create Inngest function `batchGenerateEmails` in `src/lib/inngest/functions/batch-generate-emails.ts`
-- [ ] T047 Create Inngest function `sendCampaignBatch` in `src/lib/inngest/functions/send-campaign-batch.ts`
-- [ ] T048 Create email generation helper in `src/lib/inngest/helpers/generate-email.ts`
-- [ ] T049 Create email sending helper in `src/lib/inngest/helpers/send-email.ts`
-- [ ] T050 Create suppression check helper in `src/lib/inngest/helpers/check-suppression.ts`
-- [ ] T051 Register Inngest functions in `src/lib/inngest/functions/index.ts`
+- [x] T046 Create Inngest function `batchGenerateEmails` in `src/lib/inngest/functions/batch-generate-emails.ts`
+- [x] T047 Create Inngest function `sendCampaignBatch` in `src/lib/inngest/functions/send-campaign-batch.ts`
+- [x] T048 Create email generation helper in `src/lib/inngest/helpers/generate-email.ts`
+- [x] T049 Create email sending helper in `src/lib/inngest/helpers/send-email.ts`
+- [x] T050 Create suppression check helper in `src/lib/inngest/helpers/check-suppression.ts`
+- [x] T051 Register Inngest functions in `src/lib/inngest/functions/index.ts`
 
 **Verification**: Deploy to Inngest and verify functions appear in Inngest Dashboard. Test function execution locally.
 
 ### Phase 2.4: Email Templates & Utilities
 
-- [ ] T052 Create email template for unsubscribe footer in `src/lib/email/templates/unsubscribe.ts`
-- [ ] T053 Create JWT token generator for unsubscribe links in `src/lib/auth/jwt.ts`
-- [ ] T054 Create email validation utility in `src/lib/email/validate.ts`
-- [ ] T055 Create rate limiting utility for email sending in `src/lib/email/rate-limit.ts`
+- [x] T052 Create email template for unsubscribe footer in `src/lib/email/templates/unsubscribe.ts`
+- [x] T053 Create JWT token generator for unsubscribe links in `src/lib/auth/jwt.ts`
+- [x] T054 Create email validation utility in `src/lib/email/validate.ts`
+- [x] T055 Create rate limiting utility for email sending in `src/lib/email/rate-limit.ts`
 
 **Verification**: Test JWT token generation and verification. Verify email validation catches invalid formats.
+
+### Phase 2.5: API Routes
+
+- [x] T056 Create GET /api/businesses endpoint in `src/app/api/businesses/route.ts`
+- [x] T057 Create POST /api/campaigns endpoint in `src/app/api/campaigns/route.ts`
+- [x] T058 Create POST /api/campaigns/{id}/start endpoint in `src/app/api/campaigns/[id]/start/route.ts`
+- [x] T059 Create GET /api/analytics/campaigns/{id} endpoint in `src/app/api/analytics/campaigns/[id]/route.ts`
+- [x] T060 Create GET /api/quota endpoint in `src/app/api/quota/route.ts`
+- [x] T061 Create GET /api/suppression endpoint in `src/app/api/suppression/route.ts`
+- [x] T062 Create POST /api/webhooks/email-events endpoint in `src/app/api/webhooks/email-events/route.ts`
+- [x] T063 Create GET /api/unsubscribe/{token} endpoint in `src/app/api/unsubscribe/[token]/route.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 

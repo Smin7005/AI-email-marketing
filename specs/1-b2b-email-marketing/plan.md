@@ -10,7 +10,7 @@ Build a B2B email marketing SaaS platform that enables Australian local service 
 ## Technical Context
 
 **Language/Version**: TypeScript 5.x with strict mode enabled
-**Primary Dependencies**: Next.js 14+ (App Router), Drizzle ORM, Supabase, Clerk, Inngest, OpenAI SDK, AWS SES SDK / Resend
+**Primary Dependencies**: Next.js 14+ (App Router), Drizzle ORM, Supabase, Clerk, Inngest, OpenAI SDK, Resend
 **Storage**: Supabase (PostgreSQL) with Drizzle ORM
 **Testing**: Jest, React Testing Library, Playwright for E2E
 **Target Platform**: Web application (SaaS)

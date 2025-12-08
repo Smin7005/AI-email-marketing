@@ -17,7 +17,22 @@
       "Bash(npm install next@14.2.20)",
       "Bash(npm install:*)",
       "Bash(tree:*)",
-      "Bash(npm run build)"
+      "Bash(npm run build)",
+      "Bash(npm run:*)",
+      "Bash(node test-env.js:*)",
+      "mcp__supabase__get_project",
+      "mcp__supabase__get_project_url",
+      "Bash(npx drizzle-kit:*)",
+      "Bash(npx supabase@latest:*)",
+      "Bash(psql:*)",
+      "Bash(node test-connection.js:*)",
+      "Bash(ping:*)",
+      "Bash(nslookup:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(echo:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(curl -X GET:*)",
+      "Bash(.specify/scripts/powershell/check-prerequisites.ps1:*)"
     ],
     "deny": [],
     "ask": []

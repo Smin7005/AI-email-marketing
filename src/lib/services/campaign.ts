@@ -1,0 +1,307 @@
+import { db } from '../db';
+import { campaigns, campaignItems, businesses, emailEvents } from '../db/schema';
+import { and, eq, inArray, sql, desc, asc, count } from 'drizzle-orm';
+import { withOrganization } from '../db/tenant';
+
+export interface CreateCampaignData {
+  name: string;
+  subject: string;
+  senderName: string;
+  senderEmail: string;
+  serviceDescription: string;
+  tone?: 'professional' | 'friendly' | 'casual';
+  businessIds: number[];
+}
+
+export interface UpdateCampaignData {
+  name?: string;
+  subject?: string;
+  senderName?: string;
+  senderEmail?: string;
+  serviceDescription?: string;
+  tone?: 'professional' | 'friendly' | 'casual';
+}
+
+export class CampaignService {
+  /**
+   * Create a new campaign
+   * @param organizationId Organization ID for tenant isolation
+   * @param data Campaign data
+   * @returns Created campaign
+   */
+  async createCampaign(organizationId: string, data: CreateCampaignData) {
+    const { name, subject, senderName, senderEmail, serviceDescription, tone = 'professional', businessIds } = data;
+
+    // Validate business IDs
+    const validBusinesses = await db
+      .select({ id: businesses.id })
+      .from(businesses)
+      .where(inArray(businesses.id, businessIds));
+
+    if (validBusinesses.length !== businessIds.length) {
+      throw new Error('Some business IDs are invalid');
+    }
+
+    // Start transaction
+    return await db.transaction(async (tx) => {
+      // Create campaign
+      const [campaign] = await tx
+        .insert(campaigns)
+        .values({
+          organizationId,
+          name,
+          subject,
+          senderName,
+          senderEmail,
+          serviceDescription,
+          tone,
+          totalRecipients: businessIds.length,
+          status: 'draft',
+        })
+        .returning();
+
+      // Create campaign items
+      const campaignItemValues = businessIds.map((businessId) => ({
+        campaignId: campaign.id,
+        businessId,
+        status: 'pending',
+      }));
+
+      await tx.insert(campaignItems).values(campaignItemValues);
+
+      return campaign;
+    });
+  }
+
+  /**
+   * Get campaigns for an organization
+   * @param organizationId Organization ID
+   * @param page Page number
+   * @param limit Items per page
+   * @returns Campaigns with pagination
+   */
+  async getCampaigns(organizationId: string, page = 1, limit = 20) {
+    const offset = (page - 1) * limit;
+
+    const [campaignsResult, totalResult] = await Promise.all([
+      db
+        .select()
+        .from(campaigns)
+        .where(withOrganization(organizationId))
+        .orderBy(desc(campaigns.createdAt))
+        .limit(limit)
+        .offset(offset),
+      db
+        .select({ count: count() })
+        .from(campaigns)
+        .where(withOrganization(organizationId)),
+    ]);
+
+    return {
+      campaigns: campaignsResult,
+      total: totalResult[0].count,
+      page,
+      limit,
+      totalPages: Math.ceil(totalResult[0].count / limit),
+    };
+  }
+
+  /**
+   * Get campaign by ID with organization isolation
+   * @param organizationId Organization ID
+   * @param campaignId Campaign ID
+   * @returns Campaign or null
+   */
+  async getCampaign(organizationId: string, campaignId: number) {
+    const result = await db
+      .select()
+      .from(campaigns)
+      .where(
+        and(
+          eq(campaigns.id, campaignId),
+          withOrganization(organizationId)
+        )
+      )
+      .limit(1);
+
+    return result[0] || null;
+  }
+
+  /**
+   * Get campaign with items and metrics
+   * @param organizationId Organization ID
+   * @param campaignId Campaign ID
+   * @returns Campaign with items and stats
+   */
+  async getCampaignWithDetails(organizationId: string, campaignId: number) {
+    const campaign = await this.getCampaign(organizationId, campaignId);
+    if (!campaign) return null;
+
+    // Get campaign items with business details
+    const items = await db
+      .select({
+        id: campaignItems.id,
+        status: campaignItems.status,
+        emailSubject: campaignItems.emailSubject,
+        emailContent: campaignItems.emailContent,
+        sentAt: campaignItems.sentAt,
+        errorMessage: campaignItems.errorMessage,
+        businessId: businesses.id,
+        businessName: businesses.name,
+        businessEmail: businesses.email,
+        businessCity: businesses.city,
+        businessIndustry: businesses.industry,
+      })
+      .from(campaignItems)
+      .innerJoin(businesses, eq(businesses.id, campaignItems.businessId))
+      .where(eq(campaignItems.campaignId, campaignId))
+      .orderBy(asc(businesses.name));
+
+    // Get metrics
+    const metrics = await this.getCampaignMetrics(organizationId, campaignId);
+
+    return {
+      ...campaign,
+      items,
+      metrics,
+    };
+  }
+
+  /**
+   * Update campaign
+   * @param organizationId Organization ID
+   * @param campaignId Campaign ID
+   * @param data Update data
+   * @returns Updated campaign
+   */
+  async updateCampaign(organizationId: string, campaignId: number, data: UpdateCampaignData) {
+    const [campaign] = await db
+      .update(campaigns)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(campaigns.id, campaignId),
+          withOrganization(organizationId)
+        )
+      )
+      .returning();
+
+    if (!campaign) {
+      throw new Error('Campaign not found');
+    }
+
+    return campaign;
+  }
+
+  /**
+   * Delete campaign
+   * @param organizationId Organization ID
+   * @param campaignId Campaign ID
+   */
+  async deleteCampaign(organizationId: string, campaignId: number) {
+    await db
+      .delete(campaigns)
+      .where(
+        and(
+          eq(campaigns.id, campaignId),
+          withOrganization(organizationId)
+        )
+      );
+  }
+
+  /**
+   * Update campaign status
+   * @param organizationId Organization ID
+   * @param campaignId Campaign ID
+   * @param status New status
+   */
+  async updateCampaignStatus(organizationId: string, campaignId: number, status: string) {
+    await db
+      .update(campaigns)
+      .set({
+        status,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(campaigns.id, campaignId),
+          withOrganization(organizationId)
+        )
+      );
+  }
+
+  /**
+   * Get campaign metrics
+   * @param organizationId Organization ID
+   * @param campaignId Campaign ID
+   * @returns Campaign metrics
+   */
+  async getCampaignMetrics(organizationId: string, campaignId: number) {
+    const metrics = await db
+      .select({
+        status: campaignItems.status,
+        count: count(),
+      })
+      .from(campaignItems)
+      .innerJoin(campaigns, eq(campaigns.id, campaignItems.campaignId))
+      .where(
+        and(
+          eq(campaignItems.campaignId, campaignId),
+          withOrganization(organizationId)
+        )
+      )
+      .groupBy(campaignItems.status);
+
+    const metricsMap = metrics.reduce((acc, item) => {
+      acc[item.status] = item.count;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      total: metrics.reduce((sum, item) => sum + item.count, 0),
+      pending: metricsMap['pending'] || 0,
+      generated: metricsMap['generated'] || 0,
+      sent: metricsMap['sent'] || 0,
+      failed: metricsMap['failed'] || 0,
+      suppressed: metricsMap['suppressed'] || 0,
+    };
+  }
+
+  /**
+   * Get campaign analytics with email events
+   * @param organizationId Organization ID
+   * @param campaignId Campaign ID
+   * @returns Campaign analytics
+   */
+  async getCampaignAnalytics(organizationId: string, campaignId: number) {
+    const events = await db
+      .select({
+        eventType: emailEvents.eventType,
+        count: count(),
+      })
+      .from(emailEvents)
+      .where(
+        and(
+          eq(emailEvents.campaignId, campaignId),
+          withOrganization(organizationId)
+        )
+      )
+      .groupBy(emailEvents.eventType);
+
+    const eventsMap = events.reduce((acc, item) => {
+      acc[item.eventType] = item.count;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      delivered: eventsMap['delivered'] || 0,
+      opened: eventsMap['opened'] || 0,
+      clicked: eventsMap['clicked'] || 0,
+      bounced: eventsMap['bounced'] || 0,
+      complained: eventsMap['complained'] || 0,
+    };
+  }
+}

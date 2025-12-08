@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from '@clerk/nextjs'
+import { QueryProvider } from '@/components/providers/query-provider';
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,10 +14,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased">
-        {children}
-      </body>
-    </html>
+    <ClerkProvider afterSignOutUrl="/">
+      <QueryProvider>
+        <html lang="en">
+          <body className="antialiased">
+            {children}
+          </body>
+        </html>
+      </QueryProvider>
+    </ClerkProvider>
   );
 }
