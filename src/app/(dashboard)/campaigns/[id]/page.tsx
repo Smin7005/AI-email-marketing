@@ -1,0 +1,457 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, Play, RefreshCw, Mail, Send } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+
+interface Campaign {
+  id: number;
+  name: string;
+  serviceDescription: string;
+  emailTone: string;
+  status: 'draft' | 'generating' | 'ready' | 'sending' | 'sent';
+  businessCount: number;
+  generatedCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CampaignItem {
+  id: number;
+  businessId: number;
+  businessName: string;
+  businessEmail: string;
+  status: 'pending' | 'generated' | 'sending' | 'sent' | 'failed' | 'opened' | 'clicked';
+  subject?: string;
+  emailContent?: string;
+  errorMessage?: string;
+}
+
+export default function CampaignDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const campaignId = params.id as string;
+
+  const [isStartingGeneration, setIsStartingGeneration] = useState(false);
+  const [isSendingCampaign, setIsSendingCampaign] = useState(false);
+
+  const {
+    data: campaign,
+    isLoading: campaignLoading,
+    error: campaignError,
+  } = useQuery<Campaign>({
+    queryKey: ['campaign', campaignId],
+    queryFn: async () => {
+      const response = await fetch(`/api/campaigns/${campaignId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch campaign');
+      }
+      return response.json();
+    },
+  });
+
+  const {
+    data: campaignItems,
+    isLoading: itemsLoading,
+    refetch: refetchItems,
+  } = useQuery<CampaignItem[]>({
+    queryKey: ['campaign-items', campaignId],
+    queryFn: async () => {
+      const response = await fetch(`/api/campaigns/${campaignId}/items`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch campaign items');
+      }
+      return response.json();
+    },
+    refetchInterval: (data) => {
+      // Auto-refresh every 3 seconds if generation or sending is in progress
+      if (campaign?.status === 'generating' || campaign?.status === 'sending') {
+        return 3000;
+      }
+      return false;
+    },
+  });
+
+  const startGenerationMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/campaigns/${campaignId}/start`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to start generation');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['campaign', campaignId] });
+      queryClient.invalidateQueries({
+        queryKey: ['campaign-items', campaignId],
+      });
+      setIsStartingGeneration(false);
+    },
+    onError: () => {
+      setIsStartingGeneration(false);
+      alert('Failed to start generation. Please try again.');
+    },
+  });
+
+  const sendCampaignMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/campaigns/${campaignId}/send`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to send campaign');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['campaign', campaignId] });
+      queryClient.invalidateQueries({
+        queryKey: ['campaign-items', campaignId],
+      });
+      setIsSendingCampaign(false);
+    },
+    onError: () => {
+      setIsSendingCampaign(false);
+      alert('Failed to send campaign. Please try again.');
+    },
+  });
+
+  const handleStartGeneration = () => {
+    setIsStartingGeneration(true);
+    startGenerationMutation.mutate();
+  };
+
+  const handleSendCampaign = () => {
+    setIsSendingCampaign(true);
+    sendCampaignMutation.mutate();
+  };
+
+  const handleRegenerateEmail = async (itemId: number) => {
+    try {
+      const response = await fetch(
+        `/api/campaigns/${campaignId}/items/${itemId}/regenerate`,
+        {
+          method: 'POST',
+        }
+      );
+      if (!response.ok) {
+        throw new Error('Failed to regenerate email');
+      }
+      queryClient.invalidateQueries({
+        queryKey: ['campaign-items', campaignId],
+      });
+    } catch (error) {
+      console.error('Error regenerating email:', error);
+      alert('Failed to regenerate email. Please try again.');
+    }
+  };
+
+  const getStatusBadge = (status: Campaign['status']) => {
+    const statusConfig = {
+      draft: { label: 'Draft', variant: 'secondary' as const },
+      generating: { label: 'Generating', variant: 'default' as const },
+      ready: { label: 'Ready', variant: 'default' as const },
+      sending: { label: 'Sending', variant: 'default' as const },
+      sent: { label: 'Sent', variant: 'default' as const },
+    };
+    const config = statusConfig[status];
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  const getItemStatusBadge = (status: CampaignItem['status']) => {
+    const statusConfig = {
+      pending: { label: 'Pending', variant: 'secondary' as const },
+      generated: { label: 'Generated', variant: 'default' as const },
+      sending: { label: 'Sending', variant: 'default' as const },
+      sent: { label: 'Sent', variant: 'default' as const },
+      opened: { label: 'Opened', variant: 'default' as const },
+      clicked: { label: 'Clicked', variant: 'default' as const },
+      failed: { label: 'Failed', variant: 'destructive' as const },
+    };
+    const config = statusConfig[status];
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  if (campaignLoading) {
+    return (
+      <div className="container mx-auto py-8 px-4 max-w-7xl">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (campaignError || !campaign) {
+    return (
+      <div className="container mx-auto py-8 px-4 max-w-7xl">
+        <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-red-600">
+              Campaign not found or failed to load.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const progressPercentage =
+    campaign.businessCount > 0
+      ? Math.round((campaign.generatedCount / campaign.businessCount) * 100)
+      : 0;
+
+  return (
+    <div className="container mx-auto py-8 px-4 max-w-7xl">
+      <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back
+      </Button>
+
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold">{campaign.name}</h1>
+            <div className="flex items-center gap-2 mt-2">
+              {getStatusBadge(campaign.status)}
+              <span className="text-sm text-gray-600">
+                Created {new Date(campaign.createdAt).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+          {campaign.status === 'draft' && (
+            <Button
+              onClick={handleStartGeneration}
+              disabled={isStartingGeneration}
+            >
+              <Play className="w-4 h-4 mr-2" />
+              {isStartingGeneration ? 'Starting...' : 'Start AI Generation'}
+            </Button>
+          )}
+          {campaign.status === 'ready' && (
+            <Button
+              onClick={handleSendCampaign}
+              disabled={isSendingCampaign}
+            >
+              <Send className="w-4 h-4 mr-2" />
+              {isSendingCampaign ? 'Sending...' : 'Send Campaign'}
+            </Button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total Prospects
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {campaign.businessCount}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Generated</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {campaign.generatedCount}/{campaign.businessCount}
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all"
+                  style={{ width: `${progressPercentage}%` }}
+                ></div>
+              </div>
+              <p className="text-xs text-gray-600 mt-1">
+                {progressPercentage}% complete
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Email Tone</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold capitalize">
+                {campaign.emailTone}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Analytics Dashboard */}
+        {(campaign.status === 'sent' || campaign.status === 'sending') && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Sent</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {campaignItems?.filter((item) =>
+                    ['sent', 'opened', 'clicked'].includes(item.status)
+                  ).length || 0}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Open Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const sentCount =
+                    campaignItems?.filter((item) =>
+                      ['sent', 'opened', 'clicked'].includes(item.status)
+                    ).length || 0;
+                  const openedCount =
+                    campaignItems?.filter((item) =>
+                      ['opened', 'clicked'].includes(item.status)
+                    ).length || 0;
+                  const openRate =
+                    sentCount > 0 ? Math.round((openedCount / sentCount) * 100) : 0;
+                  return <div className="text-2xl font-bold">{openRate}%</div>;
+                })()}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Click Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const sentCount =
+                    campaignItems?.filter((item) =>
+                      ['sent', 'opened', 'clicked'].includes(item.status)
+                    ).length || 0;
+                  const clickedCount =
+                    campaignItems?.filter((item) => item.status === 'clicked')
+                      .length || 0;
+                  const clickRate =
+                    sentCount > 0
+                      ? Math.round((clickedCount / sentCount) * 100)
+                      : 0;
+                  return <div className="text-2xl font-bold">{clickRate}%</div>;
+                })()}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Service Description</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700">{campaign.serviceDescription}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Separator className="my-6" />
+
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Campaign Emails</h2>
+        {itemsLoading ? (
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="pt-6">
+                  <div className="animate-pulse space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : campaignItems && campaignItems.length > 0 ? (
+          <div className="space-y-4">
+            {campaignItems.map((item) => (
+              <Card key={item.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg">
+                        {item.businessName}
+                      </CardTitle>
+                      <p className="text-sm text-gray-600">
+                        {item.businessEmail}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getItemStatusBadge(item.status)}
+                      {item.status === 'generated' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRegenerateEmail(item.id)}
+                        >
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          Regenerate
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                {item.subject && (
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-sm font-medium">Subject:</p>
+                        <p className="text-sm text-gray-700">{item.subject}</p>
+                      </div>
+                      {item.emailContent && (
+                        <div>
+                          <p className="text-sm font-medium">Preview:</p>
+                          <p className="text-sm text-gray-700 line-clamp-3">
+                            {item.emailContent.substring(0, 200)}...
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                )}
+                {item.errorMessage && (
+                  <CardContent>
+                    <p className="text-sm text-red-600">{item.errorMessage}</p>
+                  </CardContent>
+                )}
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-center text-gray-600">
+                No emails generated yet. Start the AI generation to create
+                personalized emails for your prospects.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}

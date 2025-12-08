@@ -32,7 +32,14 @@
       "Bash(echo:*)",
       "Bash(npx shadcn@latest add:*)",
       "Bash(curl -X GET:*)",
-      "Bash(.specify/scripts/powershell/check-prerequisites.ps1:*)"
+      "Bash(.specify/scripts/powershell/check-prerequisites.ps1:*)",
+      "Bash(ls:*)",
+      "mcp__filesystem__edit_file",
+      "mcp__filesystem__write_file",
+      "Bash(curl -s http://localhost:3007/api/test)",
+      "Bash(curl:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []
