@@ -41,7 +41,8 @@
       "Bash(find:*)",
       "Bash(grep:*)",
       "Bash(cat:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "mcp__filesystem__list_directory"
     ],
     "deny": [],
     "ask": []

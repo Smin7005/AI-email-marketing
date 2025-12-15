@@ -53,10 +53,19 @@ export async function POST(
       console.log('[CAMPAIGN START] No JSON body provided, using defaults');
     }
 
+    // Set default action if body is empty
+    if (Object.keys(body).length === 0) {
+      body = { action: 'generate' };
+      console.log('[CAMPAIGN START] Empty body, defaulting to action: generate');
+    }
+
+    console.log('[CAMPAIGN START] Validating body:', body);
+
     // Parse and validate request body
     const validation = startCampaignSchema.safeParse(body);
 
     if (!validation.success) {
+      console.log('[CAMPAIGN START] Validation failed:', validation.error.format());
       return NextResponse.json(
         {
           error: 'Invalid request data',

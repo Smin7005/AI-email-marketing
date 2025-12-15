@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Play, RefreshCw, Mail, Send } from 'lucide-react';
+import { ArrowLeft, Play, RefreshCw, Mail, Send, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +41,8 @@ export default function CampaignDetailPage() {
 
   const [isStartingGeneration, setIsStartingGeneration] = useState(false);
   const [isSendingCampaign, setIsSendingCampaign] = useState(false);
+  const [expandedItemId, setExpandedItemId] = useState<number | null>(null);
+  const [copiedItemId, setCopiedItemId] = useState<number | null>(null);
 
   const {
     data: campaign,
@@ -68,7 +70,9 @@ export default function CampaignDetailPage() {
       if (!response.ok) {
         throw new Error('Failed to fetch campaign items');
       }
-      return response.json();
+      const data = await response.json();
+      console.log('[FRONTEND] Received campaign items:', data);
+      return data;
     },
     refetchInterval: (data) => {
       // Auto-refresh every 3 seconds if generation or sending is in progress
@@ -152,6 +156,22 @@ export default function CampaignDetailPage() {
     } catch (error) {
       console.error('Error regenerating email:', error);
       alert('Failed to regenerate email. Please try again.');
+    }
+  };
+
+  const toggleExpandItem = (itemId: number) => {
+    console.log('[UI] Clicked item:', itemId, 'Expanding...');
+    console.log('[UI] Current expanded ID:', expandedItemId);
+    setExpandedItemId(expandedItemId === itemId ? null : itemId);
+  };
+
+  const handleCopyToClipboard = async (content: string, itemId: number) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedItemId(itemId);
+      setTimeout(() => setCopiedItemId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
     }
   };
 
@@ -396,58 +416,52 @@ export default function CampaignDetailPage() {
           </div>
         ) : campaignItems && campaignItems.length > 0 ? (
           <div className="space-y-4">
-            {campaignItems.map((item) => (
-              <Card key={item.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-lg">
-                        {item.businessName}
-                      </CardTitle>
-                      <p className="text-sm text-gray-600">
-                        {item.businessEmail}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getItemStatusBadge(item.status)}
-                      {item.status === 'generated' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRegenerateEmail(item.id)}
-                        >
-                          <RefreshCw className="w-4 h-4 mr-2" />
-                          Regenerate
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                {item.subject && (
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div>
-                        <p className="text-sm font-medium">Subject:</p>
-                        <p className="text-sm text-gray-700">{item.subject}</p>
+            {campaignItems.map((item) => {
+              console.log('[UI] Rendering item:', item.id, 'businessName:', item.businessName, 'expanded:', expandedItemId === item.id);
+              return (
+                <Card
+                  key={item.id}
+                  className={`mb-4 transition-all duration-200 ${expandedItemId === item.id ? 'border-2 border-blue-500 shadow-md ring-1 ring-blue-500' : 'border border-gray-200'}`}
+                >
+                  <CardHeader
+                    className="cursor-pointer hover:bg-gray-50 p-4"
+                    onClick={() => toggleExpandItem(item.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-lg text-gray-900">{item.businessName}</h3>
+                        <p className="text-sm text-gray-500">{item.businessEmail}</p>
                       </div>
-                      {item.emailContent && (
-                        <div>
-                          <p className="text-sm font-medium">Preview:</p>
-                          <p className="text-sm text-gray-700 line-clamp-3">
-                            {item.emailContent.substring(0, 200)}...
-                          </p>
-                        </div>
-                      )}
+                      {/* Status Badge */}
+                      <Badge variant={item.status === 'generated' ? 'default' : 'secondary'}>
+                        {item.status}
+                      </Badge>
                     </div>
-                  </CardContent>
-                )}
-                {item.errorMessage && (
-                  <CardContent>
-                    <p className="text-sm text-red-600">{item.errorMessage}</p>
-                  </CardContent>
-                )}
-              </Card>
-            ))}
+                  </CardHeader>
+
+                  {/* FORCE RENDER CHECK */}
+                  {expandedItemId === item.id && (
+                    <div className="p-4 bg-gray-50 border-t border-gray-200 block">
+                      <div className="mb-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        Email Content Preview
+                      </div>
+                      <div className="p-4 bg-white border border-gray-200 rounded shadow-sm font-mono whitespace-pre-wrap text-sm text-gray-800 min-h-[100px]">
+                        {item.emailContent || '⚠️ Content appears to be empty, but data was loaded.'}
+                      </div>
+                      <div className="mt-4 flex justify-end">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => handleCopyToClipboard(e, item.emailContent || '', item.id)}
+                        >
+                          {copiedItemId === item.id ? 'Copied!' : 'Copy to Clipboard'}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
           </div>
         ) : (
           <Card>

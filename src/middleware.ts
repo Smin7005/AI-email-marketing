@@ -7,6 +7,11 @@ const isProtectedRoute = createRouteMatcher([
 ])
 
 export default clerkMiddleware(async (auth, req) => {
+  // Allow Inngest webhooks and dev server to pass through without auth
+  if (req.nextUrl.pathname.startsWith('/api/inngest')) {
+    return
+  }
+
   if (isProtectedRoute(req)) {
     await auth.protect()
   }

@@ -60,6 +60,8 @@ export async function GET(
       )
       .orderBy(businesses.name);
 
+    console.log('[CAMPAIGN ITEMS] Raw items from DB:', items);
+
     // Transform the data to match the expected format
     const transformedItems = items.map((item) => ({
       id: item.id,
@@ -71,6 +73,8 @@ export async function GET(
       emailContent: item.emailContent || undefined,
       errorMessage: item.errorMessage || undefined,
     }));
+
+    console.log('[CAMPAIGN ITEMS] Transformed items:', transformedItems);
 
     return NextResponse.json(transformedItems);
   } catch (error) {
