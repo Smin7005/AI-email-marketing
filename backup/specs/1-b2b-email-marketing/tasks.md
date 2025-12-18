@@ -26,26 +26,26 @@
 
 **Purpose**: Project initialization and basic infrastructure setup
 
-- [x] T001 Create Next.js 14+ project with TypeScript and App Router in `src/`
-- [x] T002 [P] Configure TypeScript strict mode in `tsconfig.json`
-- [x] T003 Install and configure Tailwind CSS for styling in `src/app/globals.css`
-- [x] T004 [P] Set up project structure per plan.md (create `src/app/`, `src/components/`, `src/lib/` directories)
-- [x] T005 Create `.env.local` template with all required environment variables
-- [x] T006 Install Drizzle ORM and configure database connection in `src/lib/db/index.ts`
-- [x] T007 Install and configure Supabase client in `src/lib/db/supabase.ts`
+- [ ] T001 Create Next.js 14+ project with TypeScript and App Router in `src/`
+- [ ] T002 [P] Configure TypeScript strict mode in `tsconfig.json`
+- [ ] T003 Install and configure Tailwind CSS for styling in `src/app/globals.css`
+- [ ] T004 [P] Set up project structure per plan.md (create `src/app/`, `src/components/`, `src/lib/` directories)
+- [ ] T005 Create `.env.local` template with all required environment variables
+- [ ] T006 Install Drizzle ORM and configure database connection in `src/lib/db/index.ts`
+- [ ] T007 Install and configure Supabase client in `src/lib/db/supabase.ts`
 - [ ] T008 Install Clerk and configure authentication in `src/middleware.ts`
 - [ ] T009 Create authentication layout in `src/app/(auth)/layout.tsx`
 - [ ] T010 [P] Set up Clerk sign-in page in `src/app/(auth)/sign-in/[[...sign-in]]/page.tsx`
 - [ ] T011 [P] Set up Clerk sign-up page in `src/app/(auth)/sign-up/[[...sign-up]]/page.tsx`
-- [x] T012 Install Inngest SDK and create client in `src/lib/inngest/client.ts`
-- [x] T013 Create Inngest serve endpoint in `src/app/api/inngest/route.ts`
-- [x] T014 Install Resend SDK and configure in `src/lib/email/resend.ts`
-- [x] T015 Install OpenAI SDK and configure in `src/lib/ai/openai.ts`
-- [x] T016 Create base error handling utility in `src/lib/utils/errors.ts`
-- [x] T017 Set up logging utility in `src/lib/utils/logger.ts`
-- [x] T018 Configure ESLint and Prettier in `.eslintrc.json` and `.prettierrc`
+- [ ] T012 Install Inngest SDK and create client in `src/lib/inngest/client.ts`
+- [ ] T013 Create Inngest serve endpoint in `src/app/api/inngest/route.ts`
+- [ ] T014 Install AWS SES SDK and configure in `src/lib/email/aws-ses.ts`
+- [ ] T015 Install OpenAI SDK and configure in `src/lib/ai/openai.ts`
+- [ ] T016 Create base error handling utility in `src/lib/utils/errors.ts`
+- [ ] T017 Set up logging utility in `src/lib/utils/logger.ts`
+- [ ] T018 Configure ESLint and Prettier in `.eslintrc.json` and `.prettierrc`
 
-**Verification**: ✅ All Phase 0 tasks completed successfully. Next.js 14.2.20 is running with TypeScript strict mode enabled. All core dependencies installed and configured.
+**Verification**: Run `npm run dev` and verify Next.js starts without errors. Check that all dependencies are installed correctly.
 
 ---
 
@@ -55,32 +55,32 @@
 
 ### Phase 1.1: Drizzle Schema & Migrations
 
-- [x] T019 Create Drizzle schema file `src/lib/db/schema.ts` with all 8 tables (businesses, target_lists, target_list_items, campaigns, campaign_items, email_events, suppression_list, organization_quotas, user_preferences)
-- [x] T020 [P] Add database indexes for performance in `src/lib/db/schema.ts`
-- [x] T021 Create Drizzle config file `drizzle.config.ts`
-- [x] T022 Create migration script `src/lib/db/migrate.ts`
-- [x] T023 Run initial migration: `npm run db:generate` and `npm run db:push`
-- [x] T024 Create database types file `src/lib/db/types.ts` from schema
+- [ ] T019 Create Drizzle schema file `src/lib/db/schema.ts` with all 5 tables (businesses, campaigns, campaign_items, email_events, suppression_list)
+- [ ] T020 [P] Add database indexes for performance in `src/lib/db/schema.ts`
+- [ ] T021 Create Drizzle config file `drizzle.config.ts`
+- [ ] T022 Create migration script `src/lib/db/migrate.ts`
+- [ ] T023 Run initial migration: `npm run db:generate` and `npm run db:push`
+- [ ] T024 Create database types file `src/lib/db/types.ts` from schema
 
 **Verification**: Verify tables are created in Supabase dashboard. Run `npm run db:studio` to inspect schema.
 
 ### Phase 1.2: Seed Data for Australian Businesses
 
-- [x] T025 Create seed data script `src/lib/db/seed/businesses.ts` with 100+ Australian businesses
-- [x] T026 [P] Create sample data for major cities (Sydney, Melbourne, Brisbane, Perth, Adelaide)
-- [x] T027 [P] Create sample data for key industries (IT Services, Cleaning, Marketing, etc.)
-- [x] T028 Create seed runner script `src/lib/db/seed/index.ts`
-- [x] T029 Run seed script: `npm run db:seed`
-- [x] T030 Create seed verification query in `src/lib/db/verify-seed.ts`
+- [ ] T025 Create seed data script `src/lib/db/seed/businesses.ts` with 100+ Australian businesses
+- [ ] T026 [P] Create sample data for major cities (Sydney, Melbourne, Brisbane, Perth, Adelaide)
+- [ ] T027 [P] Create sample data for key industries (IT Services, Cleaning, Marketing, etc.)
+- [ ] T028 Create seed runner script `src/lib/db/seed/index.ts`
+- [ ] T029 Run seed script: `npm run db:seed`
+- [ ] T030 Create seed verification query in `src/lib/db/verify-seed.ts`
 
 **Verification**: Run `SELECT COUNT(*) FROM businesses` in Supabase and verify 100+ records exist. Check that cities and industries are properly distributed.
 
 ### Phase 1.3: Database Utilities
 
-- [x] T031 Create database connection pool manager in `src/lib/db/pool.ts`
-- [x] T032 Create base repository pattern in `src/lib/db/repository.ts`
-- [x] T033 Create organization-scoped query helper in `src/lib/db/tenant.ts`
-- [x] T034 Create database transaction helper in `src/lib/db/transaction.ts`
+- [ ] T031 Create database connection pool manager in `src/lib/db/pool.ts`
+- [ ] T032 Create base repository pattern in `src/lib/db/repository.ts`
+- [ ] T033 Create organization-scoped query helper in `src/lib/db/tenant.ts`
+- [ ] T034 Create database transaction helper in `src/lib/db/transaction.ts`
 
 **Verification**: Test database connection with a simple query. Verify tenant isolation works correctly.
 
@@ -94,55 +94,44 @@
 
 ### Phase 2.1: Authentication & Authorization
 
-- [x] T035 Create auth context provider in `src/lib/auth/context.tsx`
-- [x] T036 Create organization hook in `src/lib/auth/use-organization.ts`
+- [ ] T035 Create auth context provider in `src/lib/auth/context.tsx`
+- [ ] T036 Create organization hook in `src/lib/auth/use-organization.ts`
 - [ ] T037 Create protected route wrapper in `src/lib/auth/protected.tsx`
-- [x] T038 Create API route authentication helper in `src/lib/auth/api.ts`
-- [x] T039 Add organization context to all API routes in `src/app/api/route.ts`
+- [ ] T038 Create API route authentication helper in `src/lib/auth/api.ts`
+- [ ] T039 Add organization context to all API routes in `src/app/api/route.ts`
 
 **Verification**: Test that only authenticated users can access protected routes. Verify organization_id is available in all contexts.
 
 ### Phase 2.2: Core Services
 
-- [x] T040 Create business service in `src/lib/services/business.ts` with search functionality
-- [x] T041 Create campaign service in `src/lib/services/campaign.ts` with CRUD operations
-- [x] T042 Create email service in `src/lib/services/email.ts` for sending
-- [x] T043 Create analytics service in `src/lib/services/analytics.ts` for metrics
-- [x] T044 Create quota service in `src/lib/services/quota.ts` for usage tracking
-- [x] T045 Create suppression service in `src/lib/services/suppression.ts` for unsubscribe management
+- [ ] T040 Create business service in `src/lib/services/business.ts` with search functionality
+- [ ] T041 Create campaign service in `src/lib/services/campaign.ts` with CRUD operations
+- [ ] T042 Create email service in `src/lib/services/email.ts` for sending
+- [ ] T043 Create analytics service in `src/lib/services/analytics.ts` for metrics
+- [ ] T044 Create quota service in `src/lib/services/quota.ts` for usage tracking
+- [ ] T045 Create suppression service in `src/lib/services/suppression.ts` for unsubscribe management
 
 **Verification**: Test each service with unit tests. Verify all services respect tenant isolation.
 
 ### Phase 2.3: Inngest Functions
 
-- [x] T046 Create Inngest function `batchGenerateEmails` in `src/lib/inngest/functions/batch-generate-emails.ts`
-- [x] T047 Create Inngest function `sendCampaignBatch` in `src/lib/inngest/functions/send-campaign-batch.ts`
-- [x] T048 Create email generation helper in `src/lib/inngest/helpers/generate-email.ts`
-- [x] T049 Create email sending helper in `src/lib/inngest/helpers/send-email.ts`
-- [x] T050 Create suppression check helper in `src/lib/inngest/helpers/check-suppression.ts`
-- [x] T051 Register Inngest functions in `src/lib/inngest/functions/index.ts`
+- [ ] T046 Create Inngest function `batchGenerateEmails` in `src/lib/inngest/functions/batch-generate-emails.ts`
+- [ ] T047 Create Inngest function `sendCampaignBatch` in `src/lib/inngest/functions/send-campaign-batch.ts`
+- [ ] T048 Create email generation helper in `src/lib/inngest/helpers/generate-email.ts`
+- [ ] T049 Create email sending helper in `src/lib/inngest/helpers/send-email.ts`
+- [ ] T050 Create suppression check helper in `src/lib/inngest/helpers/check-suppression.ts`
+- [ ] T051 Register Inngest functions in `src/lib/inngest/functions/index.ts`
 
 **Verification**: Deploy to Inngest and verify functions appear in Inngest Dashboard. Test function execution locally.
 
 ### Phase 2.4: Email Templates & Utilities
 
-- [x] T052 Create email template for unsubscribe footer in `src/lib/email/templates/unsubscribe.ts`
-- [x] T053 Create JWT token generator for unsubscribe links in `src/lib/auth/jwt.ts`
-- [x] T054 Create email validation utility in `src/lib/email/validate.ts`
-- [x] T055 Create rate limiting utility for email sending in `src/lib/email/rate-limit.ts`
+- [ ] T052 Create email template for unsubscribe footer in `src/lib/email/templates/unsubscribe.ts`
+- [ ] T053 Create JWT token generator for unsubscribe links in `src/lib/auth/jwt.ts`
+- [ ] T054 Create email validation utility in `src/lib/email/validate.ts`
+- [ ] T055 Create rate limiting utility for email sending in `src/lib/email/rate-limit.ts`
 
 **Verification**: Test JWT token generation and verification. Verify email validation catches invalid formats.
-
-### Phase 2.5: API Routes
-
-- [x] T056 Create GET /api/businesses endpoint in `src/app/api/businesses/route.ts`
-- [x] T057 Create POST /api/campaigns endpoint in `src/app/api/campaigns/route.ts`
-- [x] T058 Create POST /api/campaigns/{id}/start endpoint in `src/app/api/campaigns/[id]/start/route.ts`
-- [x] T059 Create GET /api/analytics/campaigns/{id} endpoint in `src/app/api/analytics/campaigns/[id]/route.ts`
-- [x] T060 Create GET /api/quota endpoint in `src/app/api/quota/route.ts`
-- [x] T061 Create GET /api/suppression endpoint in `src/app/api/suppression/route.ts`
-- [x] T062 Create POST /api/webhooks/email-events endpoint in `src/app/api/webhooks/email-events/route.ts`
-- [x] T063 Create GET /api/unsubscribe/{token} endpoint in `src/app/api/unsubscribe/[token]/route.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -156,20 +145,20 @@
 
 ### Implementation for User Story 1
 
-- [x] T056 [P] [US1] Create BusinessSearchInput component in `src/components/businesses/BusinessSearchInput.tsx`
-- [x] T057 [P] [US1] Create BusinessList component in `src/components/businesses/BusinessList.tsx`
-- [x] T058 [US1] Create BusinessCard component in `src/components/businesses/BusinessCard.tsx`
-- [x] T059 [US1] Create business search page in `src/app/(dashboard)/businesses/page.tsx`
-- [x] T060 [US1] Implement GET /api/businesses endpoint in `src/app/api/businesses/route.ts`
-- [x] T061 [US1] Add city filter query parameter to business search
-- [x] T062 [US1] Add industry filter query parameter to business search
-- [x] T063 [US1] Add pagination to business search (50 results per page)
-- [x] T064 [US1] Create "Create Campaign from Results" button component
-- [x] T065 [US1] Implement campaign creation from selected businesses
-- [x] T066 [US1] Add loading states for business search
-- [x] T067 [US1] Add error handling for failed searches
-- [x] T068 [US1] Create empty state for no search results
-- [x] T069 [US1] Add business count display ("Found 234 businesses")
+- [ ] T056 [P] [US1] Create BusinessSearchInput component in `src/components/businesses/BusinessSearchInput.tsx`
+- [ ] T057 [P] [US1] Create BusinessList component in `src/components/businesses/BusinessList.tsx`
+- [ ] T058 [US1] Create BusinessCard component in `src/components/businesses/BusinessCard.tsx`
+- [ ] T059 [US1] Create business search page in `src/app/(dashboard)/businesses/page.tsx`
+- [ ] T060 [US1] Implement GET /api/businesses endpoint in `src/app/api/businesses/route.ts`
+- [ ] T061 [US1] Add city filter query parameter to business search
+- [ ] T062 [US1] Add industry filter query parameter to business search
+- [ ] T063 [US1] Add pagination to business search (50 results per page)
+- [ ] T064 [US1] Create "Create Campaign from Results" button component
+- [ ] T065 [US1] Implement campaign creation from selected businesses
+- [ ] T066 [US1] Add loading states for business search
+- [ ] T067 [US1] Add error handling for failed searches
+- [ ] T068 [US1] Create empty state for no search results
+- [ ] T069 [US1] Add business count display ("Found 234 businesses")
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -183,21 +172,21 @@
 
 ### Implementation for User Story 2
 
-- [x] T070 [P] [US2] Create CampaignForm component in `src/components/campaigns/CampaignForm.tsx`
-- [x] T071 [P] [US2] Create CampaignPreview component in `src/components/campaigns/CampaignPreview.tsx`
+- [ ] T070 [P] [US2] Create CampaignForm component in `src/components/campaigns/CampaignForm.tsx`
+- [ ] T071 [P] [US2] Create CampaignPreview component in `src/components/campaigns/CampaignPreview.tsx`
 - [ ] T072 [US2] Create EmailEditor component in `src/components/campaigns/EmailEditor.tsx`
-- [x] T073 [US2] Create campaign creation page in `src/app/(dashboard)/campaigns/create/page.tsx`
-- [x] T074 [US2] Implement POST /api/campaigns endpoint in `src/app/api/campaigns/route.ts`
-- [x] T075 [US2] Add campaign validation (name, subject, sender details)
-- [x] T076 [US2] Implement POST /api/campaigns/{id}/generate endpoint
-- [x] T077 [US2] Add campaign status tracking (draft → generating → ready)
-- [x] T078 [US2] Create progress indicator for AI generation
-- [x] T079 [US2] Add "Regenerate Email" functionality for individual emails
+- [ ] T073 [US2] Create campaign creation page in `src/app/(dashboard)/campaigns/create/page.tsx`
+- [ ] T074 [US2] Implement POST /api/campaigns endpoint in `src/app/api/campaigns/route.ts`
+- [ ] T075 [US2] Add campaign validation (name, subject, sender details)
+- [ ] T076 [US2] Implement POST /api/campaigns/{id}/generate endpoint
+- [ ] T077 [US2] Add campaign status tracking (draft → generating → ready)
+- [ ] T078 [US2] Create progress indicator for AI generation
+- [ ] T079 [US2] Add "Regenerate Email" functionality for individual emails
 - [ ] T080 [US2] Implement email preview modal
-- [x] T081 [US2] Add tone selection (professional, friendly, casual)
-- [x] T082 [US2] Create service description input with character limit
-- [x] T083 [US2] Add generation queue status display
-- [x] T084 [US2] Implement error handling for failed generations
+- [ ] T081 [US2] Add tone selection (professional, friendly, casual)
+- [ ] T082 [US2] Create service description input with character limit
+- [ ] T083 [US2] Add generation queue status display
+- [ ] T084 [US2] Implement error handling for failed generations
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -211,20 +200,20 @@
 
 ### Implementation for User Story 3
 
-- [x] T085 [P] [US3] Create CampaignSendButton component in `src/components/campaigns/CampaignSendButton.tsx`
-- [x] T086 [P] [US3] Create CampaignMetrics component in `src/components/campaigns/CampaignMetrics.tsx`
+- [ ] T085 [P] [US3] Create CampaignSendButton component in `src/components/campaigns/CampaignSendButton.tsx`
+- [ ] T086 [P] [US3] Create CampaignMetrics component in `src/components/campaigns/CampaignMetrics.tsx`
 - [ ] T087 [P] [US3] Create MetricsChart component in `src/components/analytics/MetricsChart.tsx`
-- [x] T088 [US3] Create campaign detail page in `src/app/(dashboard)/campaigns/[id]/page.tsx`
-- [x] T089 [US3] Implement POST /api/campaigns/{id}/send endpoint
-- [x] T090 [US3] Add quota check before sending (prevent if over limit)
+- [ ] T088 [US3] Create campaign detail page in `src/app/(dashboard)/campaigns/[id]/page.tsx`
+- [ ] T089 [US3] Implement POST /api/campaigns/{id}/send endpoint
+- [ ] T090 [US3] Add quota check before sending (prevent if over limit)
 - [ ] T091 [US3] Implement sending confirmation dialog
-- [x] T092 [US3] Create real-time metrics update mechanism
-- [x] T093 [US3] Add delivery status for each email (pending, sent, failed)
-- [x] T094 [US3] Implement metrics: delivered, opened, clicked, bounced
+- [ ] T092 [US3] Create real-time metrics update mechanism
+- [ ] T093 [US3] Add delivery status for each email (pending, sent, failed)
+- [ ] T094 [US3] Implement metrics: delivered, opened, clicked, bounced
 - [ ] T095 [US3] Create campaign timeline view
 - [ ] T096 [US3] Add export metrics functionality (CSV)
-- [x] T097 [US3] Create campaign status badges (draft, sending, sent)
-- [x] T098 [US3] Add sending progress indicator
+- [ ] T097 [US3] Create campaign status badges (draft, sending, sent)
+- [ ] T098 [US3] Add sending progress indicator
 
 **Checkpoint**: At this point, User Stories 1, 2, AND 3 should all work independently
 
@@ -238,16 +227,16 @@
 
 ### Implementation for User Story 4
 
-- [x] T099 [P] [US4] Create QuotaDisplay component in `src/components/quota/QuotaDisplay.tsx`
-- [x] T100 [P] [US4] Create QuotaProgressBar component in `src/components/quota/QuotaProgressBar.tsx`
+- [ ] T099 [P] [US4] Create QuotaDisplay component in `src/components/quota/QuotaDisplay.tsx`
+- [ ] T100 [P] [US4] Create QuotaProgressBar component in `src/components/quota/QuotaProgressBar.tsx`
 - [ ] T101 [US4] Create quota notification banner in `src/components/quota/QuotaNotification.tsx`
-- [x] T102 [US4] Implement GET /api/quota endpoint in `src/app/api/quota/route.ts`
-- [x] T103 [US4] Add quota tracking to email sending logic (enforced in POST /api/campaigns/[id]/send)
-- [x] T104 [US4] Implement 80% quota warning notification (integrated in QuotaDisplay with color coding)
-- [x] T105 [US4] Add quota reset date display (shown in QuotaDisplay component)
+- [ ] T102 [US4] Implement GET /api/quota endpoint in `src/app/api/quota/route.ts`
+- [ ] T103 [US4] Add quota tracking to email sending logic
+- [ ] T104 [US4] Implement 80% quota warning notification
+- [ ] T105 [US4] Add quota reset date display
 - [ ] T106 [US4] Create quota usage history chart
 - [ ] T107 [US4] Add quota upgrade prompt when near limit
-- [x] T108 [US4] Implement quota exceeded error handling (403 Forbidden with clear message)
+- [ ] T108 [US4] Implement quota exceeded error handling
 - [ ] T109 [US4] Create quota settings page in dashboard
 
 **Checkpoint**: All user stories should now be independently functional
@@ -258,17 +247,17 @@
 
 **Purpose**: Email event tracking and advanced analytics features
 
-- [x] T110 [P] Create webhook handler for AWS SES in `src/app/api/webhooks/ses/route.ts`
-- [x] T111 [P] Create webhook handler for Resend in `src/app/api/webhooks/resend/route.ts`
-- [x] T112 Implement webhook signature verification
-- [x] T113 Create email event processor in `src/lib/email/process-event.ts`
-- [x] T114 Add webhook event types (delivered, opened, clicked, bounced, complained)
-- [x] T115 Create unsubscribe handler in `src/app/api/unsubscribe/[token]/route.ts`
-- [x] T116 Implement unsubscribe token verification
-- [x] T117 Add suppression list management
-- [x] T118 Create bounce handling logic
-- [x] T119 Implement complaint handling
-- [x] T120 Create webhook retry mechanism for failed events
+- [ ] T110 [P] Create webhook handler for AWS SES in `src/app/api/webhooks/ses/route.ts`
+- [ ] T111 [P] Create webhook handler for Resend in `src/app/api/webhooks/resend/route.ts`
+- [ ] T112 Implement webhook signature verification
+- [ ] T113 Create email event processor in `src/lib/email/process-event.ts`
+- [ ] T114 Add webhook event types (delivered, opened, clicked, bounced, complained)
+- [ ] T115 Create unsubscribe handler in `src/app/api/unsubscribe/[token]/route.ts`
+- [ ] T116 Implement unsubscribe token verification
+- [ ] T117 Add suppression list management
+- [ ] T118 Create bounce handling logic
+- [ ] T119 Implement complaint handling
+- [ ] T120 Create webhook retry mechanism for failed events
 
 **Verification**: Send test emails and verify webhooks receive events. Check that analytics update correctly.
 

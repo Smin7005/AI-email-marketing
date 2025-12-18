@@ -28,23 +28,21 @@
 
 **Functions**:
 - `batch-generate-emails`: Processes 50 emails at a time, schedules next batch if more pending
-- `send-campaign-batch`: Sends 100 emails per second (Resend limit), includes rate limiting wait
+- `send-campaign-batch`: Sends 14 emails per second (AWS SES limit), includes rate limiting wait
 
 ## Email Service Integration
 
-**Decision**: Resend for all environments
+**Decision**: AWS SES for production, Resend for development
 
 **Rationale**:
-- Excellent developer experience with modern API
-- Built-in webhooks for email events
-- Simple pricing and great documentation
-- Removes complexity of AWS IAM configuration
-- Quick setup with domain verification
+- AWS SES offers better deliverability (dedicated IP options) and Australian region support (ap-southeast-2)
+- Lower cost at scale ($0.10 per 1000 emails vs $0.20 for Resend)
+- Resend provides better developer experience with modern API and webhooks for development
 
 **Configuration**:
-- Single service: Resend with verified domain
-- Rate limiting: 100 emails/second (Resend default), exponential backoff on errors
-- Webhooks automatically configured for tracking
+- Production: AWS SES with dedicated IP, SPF/DKIM configured
+- Development: Resend with test API keys
+- Rate limiting: 14 emails/second (AWS SES default), exponential backoff on errors
 
 ## AI Prompt Engineering
 
@@ -85,7 +83,7 @@ Response format: "Subject: [subject]\n[email body]"
 **Implementation**:
 - Monthly quota: Hard limit enforced at campaign creation
 - Daily burst: 10% of monthly quota available immediately
-- Email sending: 100/second per organization (Resend limit)
+- Email sending: 14/second per organization (AWS SES limit)
 - AI generation: 5 concurrent requests per organization
 
 ## Security Considerations
