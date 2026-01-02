@@ -17,8 +17,7 @@ async function getLeads(searchQuery?: string, cityQuery?: string, industryQuery?
   // Force no cache on the query
   let query = supabase
     .from('companyinfo')
-    .select('id, name, categories, email, phone, address')
-    .limit(50);
+    .select('id, name, categories, email, phone, address');
 
   // Apply search query filter (name)
   if (searchQuery && searchQuery.trim()) {

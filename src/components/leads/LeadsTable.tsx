@@ -166,11 +166,6 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
 
   return (
     <>
-      {/* Debug Counter */}
-      <div className="p-4 bg-green-100 text-green-800 font-bold rounded-lg">
-        ✅ Debug: Successfully loaded {leads.length} rows from Supabase!
-      </div>
-
       {/* Floating Action Bar */}
       {selectedCompanyIds.length > 0 && (
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
