@@ -1,7 +1,7 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { getSupabaseClient } from '@/lib/db/supabase';
+import { getSupabaseAdmin } from '@/lib/db/supabase';
 
 export async function getUserCollections() {
   const { userId } = await auth();
@@ -10,7 +10,7 @@ export async function getUserCollections() {
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseAdmin();
 
   const { data, error } = await supabase
     .from('collections')
@@ -48,7 +48,7 @@ export async function createCollection(name: string) {
     throw new Error('Collection name is required');
   }
 
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseAdmin();
 
   const { data, error } = await supabase
     .from('collections')
@@ -82,7 +82,7 @@ export async function addLeadsToCollection(collectionId: string, companyIds: str
     throw new Error('At least one company must be selected');
   }
 
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseAdmin();
 
   // Verify the collection belongs to the user
   const { data: collection, error: collectionError } = await supabase
@@ -135,7 +135,7 @@ export async function deleteCollection(collectionId: string) {
     throw new Error('Collection ID is required');
   }
 
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseAdmin();
 
   // Verify the collection belongs to the user
   const { data: collection, error: collectionError } = await supabase
