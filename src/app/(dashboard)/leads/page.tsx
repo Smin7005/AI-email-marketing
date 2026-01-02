@@ -1,164 +1,104 @@
-'use client';
+import { getSupabaseClient } from '@/lib/db/supabase';
+import LeadsFilters from '@/components/leads/LeadsFilters';
+import LeadsTable from '@/components/leads/LeadsTable';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Plus, Mail } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { BusinessSearchInput } from '@/components/businesses/BusinessSearchInput';
-import BusinessList from '@/components/businesses/BusinessList';
-import { useBusinesses } from '@/hooks/useBusinesses';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { QuotaDisplay } from '@/components/quota/QuotaDisplay';
+interface Company {
+  id: string;
+  name: string;
+  categories: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+}
 
-// Mock data for available cities and industries
-// In a real app, these would come from an API
-const AVAILABLE_CITIES = [
-  'Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide',
-  'Gold Coast', 'Newcastle', 'Canberra', 'Wollongong', 'Geelong'
-];
+async function getLeads(searchQuery?: string, cityQuery?: string, industryQuery?: string): Promise<Company[]> {
+  const supabase = getSupabaseClient();
 
-const AVAILABLE_INDUSTRIES = [
-  'IT Services', 'Cleaning Services', 'Digital Marketing', 'Accounting',
-  'Legal Services', 'Consulting', 'Web Development', 'Graphic Design',
-  'Photography', 'Event Planning', 'Real Estate', 'Insurance',
-  'Recruitment', 'Training', 'Printing', 'Catering'
-];
+  // Force no cache on the query
+  let query = supabase
+    .from('companyinfo')
+    .select('id, name, categories, email, phone, address')
+    .limit(50);
 
-export default function BusinessesPage() {
-  const router = useRouter();
-  const [searchParams, setSearchParams] = useState({
-    search: '',
-    cities: [] as string[],
-    industries: [] as string[],
-    page: 1,
-    limit: 10,
-  });
-  const [selectedBusinesses, setSelectedBusinesses] = useState<Set<number>>(new Set());
+  // Apply search query filter (name)
+  if (searchQuery && searchQuery.trim()) {
+    const searchTerm = `%${searchQuery.trim()}%`;
+    query = query.ilike('name', searchTerm);
+  }
 
-  const { data, isLoading, error } = useBusinesses(searchParams);
+  // Apply city filter (search in address)
+  if (cityQuery && cityQuery.trim()) {
+    const cityTerm = `%${cityQuery.trim()}%`;
+    query = query.ilike('address', cityTerm);
+  }
 
-  const handleSearch = (params: {
-    search?: string;
-    cities?: string[];
-    industries?: string[];
-  }) => {
-    setSearchParams(prev => ({
-      ...prev,
-      ...params,
-      page: 1, // Reset to first page on new search
-    }));
-    setSelectedBusinesses(new Set()); // Clear selection on new search
-  };
+  // Apply industry filter (exact match on categories)
+  if (industryQuery && industryQuery.trim() && industryQuery !== 'all') {
+    query = query.eq('categories', industryQuery.trim());
+  }
 
-  const handlePageChange = (page: number) => {
-    setSearchParams(prev => ({ ...prev, page }));
-    window.scrollTo(0, 0); // Scroll to top on page change
-  };
+  const { data, error } = await query;
 
-  const toggleBusiness = (id: number) => {
-    setSelectedBusinesses(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
+  if (error) {
+    console.error('Error fetching leads:', error);
+    return [];
+  }
 
-  const selectAll = () => {
-    if (data?.businesses) {
-      setSelectedBusinesses(new Set(data.businesses.map(b => b.id)));
-    }
-  };
+  return data || [];
+}
 
-  const deselectAll = () => {
-    setSelectedBusinesses(new Set());
-  };
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-  const handleCreateCampaign = () => {
-    if (selectedBusinesses.size === 0) {
-      alert('Please select at least one business to create a campaign.');
-      return;
-    }
+export default async function LeadsPage({
+  searchParams,
+}: {
+  searchParams: { query?: string; city?: string; industry?: string };
+}) {
+  const searchQuery = searchParams?.query;
+  const cityQuery = searchParams?.city;
+  const industryQuery = searchParams?.industry;
 
-    // Store selected businesses in session storage or pass via URL
-    const selectedIds = Array.from(selectedBusinesses);
-    sessionStorage.setItem('selectedBusinesses', JSON.stringify(selectedIds));
+  const leads = await getLeads(searchQuery, cityQuery, industryQuery);
 
-    // Navigate to campaign creation page
-    router.push('/campaigns/create');
-  };
-
-  const totalBusinesses = data?.total || 0;
-  const totalPages = data?.totalPages || 1;
-
-  // Create safe local variables to prevent undefined access
-  const safeCities = Array.isArray(searchParams?.cities) ? searchParams.cities : (searchParams?.cities ? [searchParams.cities] : []);
-  const safeIndustries = Array.isArray(searchParams?.industries) ? searchParams.industries : (searchParams?.industries ? [searchParams.industries] : []);
+  // Build active filters summary
+  const activeFilters: string[] = [];
+  if (searchQuery) activeFilters.push(`Name: "${searchQuery}"`);
+  if (cityQuery) activeFilters.push(`City: "${cityQuery}"`);
+  if (industryQuery && industryQuery !== 'all') activeFilters.push(`Industry: "${industryQuery}"`);
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold">Find Business Leads</h1>
-          {selectedBusinesses.size > 0 && (
-            <Button onClick={handleCreateCampaign}>
-              <Mail className="w-4 h-4 mr-2" />
-              Create Campaign ({selectedBusinesses.size} selected)
-            </Button>
-          )}
-        </div>
-        <p className="text-gray-600">
-          Search and filter Australian businesses to create targeted email campaigns
-        </p>
-      </div>
-
-      {/* Quota Display Widget */}
-      <div className="mb-6">
-        <QuotaDisplay />
-      </div>
-
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Search Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <BusinessSearchInput
-            onSearch={handleSearch}
-            availableCities={AVAILABLE_CITIES}
-            availableIndustries={AVAILABLE_INDUSTRIES}
-          />
-        </CardContent>
-      </Card>
-
-      <Separator className="my-6" />
-
-      {totalBusinesses > 0 && (
-        <div className="mb-4">
-          <p className="text-sm text-gray-600">
-            Found {totalBusinesses.toLocaleString()} businesses
-            {searchParams.search && ` matching "${searchParams.search}"`}
-            {safeCities.length > 0 && ` in ${safeCities.join(', ')}`}
-            {safeIndustries.length > 0 && ` in ${safeIndustries.join(', ')}`}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Find Business Leads</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Search and browse Australian businesses
           </p>
+        </div>
+        <LeadsFilters />
+      </div>
+
+      {/* Active Filters Summary */}
+      {activeFilters.length > 0 && (
+        <div className="text-sm text-gray-600">
+          <span className="font-medium">Active filters:</span>{' '}
+          {activeFilters.join(' • ')}
         </div>
       )}
 
-      <BusinessList
-        businesses={data?.businesses || []}
-        loading={isLoading}
-        error={error}
-        selectedBusinesses={selectedBusinesses}
-        onToggleBusiness={toggleBusiness}
-        onSelectAll={selectAll}
-        onDeselectAll={deselectAll}
-        currentPage={searchParams.page}
-        totalPages={totalPages}
-        onPageChange={handlePageChange}
-      />
+      {/* Results Summary */}
+      {(searchQuery || cityQuery || (industryQuery && industryQuery !== 'all')) && (
+        <div className="text-sm text-gray-600">
+          {leads.length > 0
+            ? `Found ${leads.length} result${leads.length === 1 ? '' : 's'}`
+            : 'No results found'}
+        </div>
+      )}
+
+      {/* Table */}
+      <LeadsTable leads={leads} activeFilters={activeFilters} />
     </div>
   );
 }

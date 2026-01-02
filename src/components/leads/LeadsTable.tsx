@@ -2,11 +2,18 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { ColDef, GridApi, GridReadyEvent } from 'ag-grid-community';
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-quartz.css';
+import {
+  ColDef,
+  GridApi,
+  GridReadyEvent,
+  ModuleRegistry,
+  AllCommunityModule
+} from 'ag-grid-community';
 import { Mail, Phone } from 'lucide-react';
 import AddToCollectionModal from './AddToCollectionModal';
+
+// Register all AG Grid Community modules
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 interface Company {
   id: string;
@@ -15,7 +22,6 @@ interface Company {
   email: string | null;
   phone: string | null;
   address: string | null;
-  listingTpye: string | null;
 }
 
 interface LeadsTableProps {
@@ -110,18 +116,6 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
       },
     },
     {
-      headerName: 'Type',
-      field: 'listingTpye',
-      width: 120,
-      cellRenderer: (params: any) => {
-        return (
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-            {params.value || 'Standard'}
-          </span>
-        );
-      },
-    },
-    {
       headerName: 'Actions',
       width: 100,
       pinned: 'right',
@@ -172,6 +166,11 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
 
   return (
     <>
+      {/* Debug Counter */}
+      <div className="p-4 bg-green-100 text-green-800 font-bold rounded-lg">
+        ✅ Debug: Successfully loaded {leads.length} rows from Supabase!
+      </div>
+
       {/* Floating Action Bar */}
       {selectedCompanyIds.length > 0 && (
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
@@ -201,7 +200,7 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
       )}
 
       {/* AG Grid */}
-      <div className="ag-theme-quartz" style={{ height: 'calc(100vh - 300px)', width: '100%' }}>
+      <div className="ag-theme-quartz h-[600px] w-full" style={{ height: '600px', width: '100%' }}>
         <AgGridReact
           rowData={leads}
           columnDefs={columnDefs}
