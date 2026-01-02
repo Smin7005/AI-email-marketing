@@ -1,4 +1,4 @@
-import { getSupabaseClient } from '@/lib/db/supabase';
+import { getSupabaseAdmin } from '@/lib/db/supabase';
 import { auth } from '@clerk/nextjs/server';
 import CollectionItemsTable from '@/components/collections/CollectionItemsTable';
 
@@ -26,7 +26,7 @@ interface CollectionItem {
 }
 
 async function getCollection(id: string, userId: string): Promise<Collection | null> {
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseAdmin();
 
   const { data, error } = await supabase
     .from('collections')
@@ -44,7 +44,7 @@ async function getCollection(id: string, userId: string): Promise<Collection | n
 }
 
 async function getCollectionItems(id: string): Promise<CollectionItem[]> {
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseAdmin();
 
   const { data, error } = await supabase
     .from('collection_items')
