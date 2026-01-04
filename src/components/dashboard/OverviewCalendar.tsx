@@ -18,14 +18,17 @@ export default function OverviewCalendar() {
           value={value}
           onChange={setValue}
           showNeighboringMonth={false}
+          onClickWeekNumber={(weekNumber, date, event) => {
+            // Handle week number click if needed
+          }}
           tileClassName={({ date, view }) => {
             if (view === 'month') {
               // Highlight today
-              const isToday = 
+              const isToday =
                 date.getDate() === new Date().getDate() &&
                 date.getMonth() === new Date().getMonth() &&
                 date.getFullYear() === new Date().getFullYear();
-              
+
               if (isToday) {
                 return 'react-calendar__tile--active';
               }
@@ -33,8 +36,8 @@ export default function OverviewCalendar() {
             return '';
           }}
           formatShortWeekday={(locale, date) => {
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            return days[date.getDay()];
+            const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            return weekdays[date.getDay()];
           }}
         />
       </div>
