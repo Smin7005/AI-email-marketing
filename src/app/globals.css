@@ -24,3 +24,31 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* FORCE CALENDAR ALIGNMENT: GRID METHOD */
+.react-calendar {
+  width: 100% !important;
+  border: none !important;
+  font-family: inherit !important;
+}
+
+/* 1. The Container: Force 7 equal columns */
+.react-calendar__month-view__days {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr) !important;
+}
+
+/* 2. The Buttons: Reset standard button styles */
+.react-calendar__tile {
+  max-width: none !important;
+  flex: none !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 3. Hide neighboring month days visually but keep grid space */
+.react-calendar__month-view__days__day--neighboringMonth {
+  visibility: hidden !important;
+}

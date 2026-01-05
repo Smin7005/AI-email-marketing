@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
@@ -17,8 +16,9 @@ export default function OverviewCalendar() {
         <Calendar
           value={value}
           onChange={setValue}
-          showNeighboringMonth={false}
+          showNeighboringMonth={true}
           locale="en-GB"
+          calendarType="iso8601"
           tileClassName={({ date, view }) => {
             if (view === 'month') {
               // Highlight today

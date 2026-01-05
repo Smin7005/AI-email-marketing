@@ -3,6 +3,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { QueryProvider } from '@/components/providers/query-provider';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
+import 'react-calendar/dist/Calendar.css';
 import "./globals.css";
 
 export const metadata: Metadata = {
