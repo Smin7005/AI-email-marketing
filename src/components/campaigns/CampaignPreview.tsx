@@ -9,6 +9,7 @@ interface CampaignPreviewProps {
   emailTone: string;
   businessCount: number;
   selectedBusinessNames?: string[];
+  isManualMode?: boolean;
 }
 
 export function CampaignPreview({
@@ -17,6 +18,7 @@ export function CampaignPreview({
   emailTone,
   businessCount,
   selectedBusinessNames = [],
+  isManualMode = false,
 }: CampaignPreviewProps) {
   const toneLabels: Record<string, string> = {
     professional: 'Professional',
@@ -38,7 +40,9 @@ export function CampaignPreview({
             <Badge variant="secondary">
               {toneLabels[emailTone] || emailTone} tone
             </Badge>
-            <Badge variant="outline">{businessCount} prospects</Badge>
+            <Badge variant="outline">
+              {isManualMode ? '1 recipient' : `${businessCount} prospects`}
+            </Badge>
           </div>
         </div>
 
@@ -50,7 +54,7 @@ export function CampaignPreview({
         {selectedBusinessNames.length > 0 && (
           <div>
             <h4 className="font-medium mb-2">
-              Selected Prospects ({selectedBusinessNames.length})
+              {isManualMode ? 'Recipient' : 'Selected Prospects'} ({selectedBusinessNames.length})
             </h4>
             <div className="max-h-32 overflow-y-auto space-y-1">
               {selectedBusinessNames.map((business, index) => (
@@ -65,9 +69,19 @@ export function CampaignPreview({
         <div className="pt-4 border-t">
           <h4 className="font-medium mb-2">What happens next?</h4>
           <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
-            <li>AI will generate personalized emails for each prospect</li>
-            <li>You'll be able to review and edit emails before sending</li>
-            <li>Track opens, clicks, and responses in real-time</li>
+            {isManualMode ? (
+              <>
+                <li>AI will generate a personalized email</li>
+                <li>You'll be able to review and edit the email before sending</li>
+                <li>Track opens, clicks, and responses in real-time</li>
+              </>
+            ) : (
+              <>
+                <li>AI will generate personalized emails for each prospect</li>
+                <li>You'll be able to review and edit emails before sending</li>
+                <li>Track opens, clicks, and responses in real-time</li>
+              </>
+            )}
           </ol>
         </div>
       </CardContent>

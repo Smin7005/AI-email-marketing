@@ -48,20 +48,21 @@ export const generateEmails = inngest.createFunction(
       tone: campaignData.tone,
     });
 
-    // Step 2: Fetch campaign items with business details
+    // Step 2: Fetch campaign items with business details or manual metadata
     const itemsData = await step.run('fetch-items', async () => {
       const items = await db
         .select({
           id: campaignItems.id,
-          businessId: businesses.id,
+          businessId: campaignItems.businessId,
           businessName: businesses.name,
           businessEmail: businesses.email,
           businessCity: businesses.city,
           businessIndustry: businesses.industry,
           businessDescription: businesses.description,
+          metadata: campaignItems.metadata,
         })
         .from(campaignItems)
-        .innerJoin(businesses, eq(businesses.id, campaignItems.businessId))
+        .leftJoin(businesses, eq(businesses.id, campaignItems.businessId))
         .where(eq(campaignItems.campaignId, campaignId));
 
       return items;
@@ -74,7 +75,14 @@ export const generateEmails = inngest.createFunction(
       const generatedEmails = [];
 
       for (const item of itemsData) {
-        console.log(`Generating email for ${item.businessName} (${item.businessIndustry})`);
+        // Handle both business-based and manual entries
+        const recipientName = item.businessName || item.metadata?.name || 'Valued Client';
+        const recipientEmail = item.businessEmail || item.metadata?.email || '';
+        const industry = item.businessIndustry || 'business services';
+        const city = item.businessCity || 'Australia';
+        const description = item.businessDescription || 'local business';
+
+        console.log(`Generating email for ${recipientName} (${industry})`);
 
         const prompt = `Write a personalized cold email for a B2B outreach campaign.
 
@@ -83,10 +91,10 @@ Campaign Details:
 - Email Tone: ${campaignData.tone}
 
 Target Business:
-- Name: ${item.businessName}
-- Industry: ${item.businessIndustry}
-- City: ${item.businessCity}
-- Description: ${item.businessDescription || 'Not provided'}
+- Name: ${recipientName}
+- Industry: ${industry}
+- City: ${city}
+- Description: ${description}
 
 Instructions:
 1. Write a concise, professional cold email (150-200 words)
@@ -117,7 +125,7 @@ Email:`;
 
           const generatedText = completion.choices[0]?.message?.content?.trim();
 
-          console.log(`[GENERATE EMAILS] Generated text for ${item.businessName}:`, {
+          console.log(`[GENERATE EMAILS] Generated text for ${recipientName}:`, {
             length: generatedText?.length || 0,
             preview: generatedText?.substring(0, 100) || 'EMPTY',
           });
@@ -136,15 +144,15 @@ Email:`;
             })
             .where(eq(campaignItems.id, item.id));
 
-          console.log(`✓ Generated email for ${item.businessName} (${generatedText.length} chars)`);
+          console.log(`✓ Generated email for ${recipientName} (${generatedText.length} chars)`);
 
           generatedEmails.push({
             itemId: item.id,
-            businessName: item.businessName,
+            businessName: recipientName,
             success: true,
           });
         } catch (error) {
-          console.error(`✗ Failed to generate email for ${item.businessName}:`, error);
+          console.error(`✗ Failed to generate email for ${recipientName}:`, error);
 
           // Mark as failed
           await db
@@ -158,7 +166,7 @@ Email:`;
 
           generatedEmails.push({
             itemId: item.id,
-            businessName: item.businessName,
+            businessName: recipientName,
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error',
           });

@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/db/supabase';
+import { getCompanyDbClient } from '@/lib/db/company-client';
 import { auth } from '@clerk/nextjs/server';
 import CollectionItemsTable from '@/components/collections/CollectionItemsTable';
 
@@ -16,12 +17,14 @@ interface CollectionItem {
   company_id: string;
   created_at: string;
   companyinfo: {
-    id: string;
-    name: string;
-    categories: string | null;
+    listing_id: string;
+    company_name: string;
+    category_name: string | null;
     email: string | null;
-    phone: string | null;
-    address: string | null;
+    phone_number: string | null;
+    address_suburb: string | null;
+    address_state: string | null;
+    address_postcode: string | null;
   };
 }
 
@@ -44,24 +47,11 @@ async function getCollection(id: string, userId: string): Promise<Collection | n
 }
 
 async function getCollectionItems(id: string): Promise<CollectionItem[]> {
-  const supabase = getSupabaseAdmin();
-
-  const { data, error } = await supabase
+  // Step 1: Get collection items from DB1 (User DB) - only get company_ids
+  const supabaseAdmin = getSupabaseAdmin();
+  const { data: collectionItems, error } = await supabaseAdmin
     .from('collection_items')
-    .select(`
-      id,
-      collection_id,
-      company_id,
-      created_at,
-      companyinfo:companyinfo!inner (
-        id,
-        name,
-        categories,
-        email,
-        phone,
-        address
-      )
-    `)
+    .select('id, collection_id, company_id, created_at')
     .eq('collection_id', id);
 
   if (error) {
@@ -69,11 +59,44 @@ async function getCollectionItems(id: string): Promise<CollectionItem[]> {
     return [];
   }
 
-  // Transform the data to match the expected type
-  return (data || []).map((item: any) => ({
-    ...item,
-    companyinfo: Array.isArray(item.companyinfo) ? item.companyinfo[0] : item.companyinfo
-  }));
+  if (!collectionItems || collectionItems.length === 0) {
+    return [];
+  }
+
+  // Step 2: Extract company IDs
+  const companyIds = collectionItems.map(item => item.company_id);
+
+  // Step 3: Fetch company details from DB2 (Company DB)
+  const companyDb = getCompanyDbClient();
+  const { data: companies, error: companiesError } = await companyDb
+    .from('rawdata_yellowpage_new')
+    .select('listing_id, company_name, category_name, email, phone_number, address_suburb, address_state, address_postcode')
+    .in('listing_id', companyIds);
+
+  if (companiesError) {
+    console.error('Error fetching company details:', companiesError);
+    return [];
+  }
+
+  // Step 4: Merge the data - application-level join
+  const items = collectionItems.map(collectionItem => {
+    const companyInfo = companies?.find(c => c.listing_id === collectionItem.company_id);
+    return {
+      ...collectionItem,
+      companyinfo: companyInfo || {
+        listing_id: collectionItem.company_id,
+        company_name: 'Unknown',
+        category_name: null,
+        email: null,
+        phone_number: null,
+        address_suburb: null,
+        address_state: null,
+        address_postcode: null
+      }
+    };
+  });
+
+  return items;
 }
 
 export const dynamic = 'force-dynamic';

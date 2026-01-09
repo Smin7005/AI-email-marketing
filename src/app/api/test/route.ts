@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { businesses } from '@/lib/db/schema';
-import { sql } from 'drizzle-orm';
+import { getCompanyDbClient } from '@/lib/db/company-client';
 
 export async function GET() {
   try {
-    // Test database connection
-    const result = await db.select({ count: sql<number>`count(*)` }).from(businesses);
-    const count = result[0].count;
+    // Test company database connection
+    const companyDb = getCompanyDbClient();
+    const { count } = await companyDb
+      .from('rawdata_yellowpage_new')
+      .select('*', { count: 'exact', head: true });
 
     return NextResponse.json({
-      message: 'Database connection successful',
-      businessCount: count,
+      message: 'Company database connection successful',
+      businessCount: count || 0,
       timestamp: new Date().toISOString()
     });
   } catch (error) {

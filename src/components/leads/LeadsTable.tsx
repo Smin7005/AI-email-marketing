@@ -16,12 +16,14 @@ import AddToCollectionModal from './AddToCollectionModal';
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 interface Company {
-  id: string;
-  name: string;
-  categories: string | null;
+  listing_id: string;
+  company_name: string;
+  category_name: string | null;
   email: string | null;
-  phone: string | null;
-  address: string | null;
+  phone_number: string | null;
+  address_suburb: string | null;
+  address_state: string | null;
+  address_postcode: string | null;
 }
 
 interface LeadsTableProps {
@@ -48,7 +50,7 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
     },
     {
       headerName: 'Business',
-      field: 'name',
+      field: 'company_name',
       filter: true,
       sortable: true,
       width: 250,
@@ -62,7 +64,7 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
     },
     {
       headerName: 'Category',
-      field: 'categories',
+      field: 'category_name',
       filter: true,
       sortable: true,
       width: 200,
@@ -88,15 +90,15 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
                 </a>
               </div>
             )}
-            {data.phone && (
+            {data.phone_number && (
               <div className="flex items-center text-sm text-gray-600">
                 <Phone className="h-3 w-3 mr-1 text-gray-400" />
-                <a href={`tel:${data.phone}`} className="hover:text-blue-600">
-                  {data.phone}
+                <a href={`tel:${data.phone_number}`} className="hover:text-blue-600">
+                  {data.phone_number}
                 </a>
               </div>
             )}
-            {!data.email && !data.phone && (
+            {!data.email && !data.phone_number && (
               <div className="text-sm text-gray-400">No contact info</div>
             )}
           </div>
@@ -105,12 +107,18 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
     },
     {
       headerName: 'Address',
-      field: 'address',
       width: 300,
       cellRenderer: (params: any) => {
+        const data = params.data;
+        const addressParts = [
+          data.address_suburb,
+          data.address_state,
+          data.address_postcode
+        ].filter(Boolean);
+        const fullAddress = addressParts.join(', ');
         return (
           <div className="text-sm text-gray-600 truncate py-2 max-w-[280px]">
-            {params.value || '-'}
+            {fullAddress || '-'}
           </div>
         );
       },
@@ -123,7 +131,7 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
         return (
           <button
             onClick={() => {
-              setSelectedCompanyIds([params.data.id]);
+              setSelectedCompanyIds([params.data.listing_id]);
               setIsModalOpen(true);
             }}
             className="text-blue-600 hover:text-blue-900 font-medium text-sm"
@@ -142,13 +150,13 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
   const onSelectionChanged = useCallback(() => {
     if (gridApiRef.current) {
       const selectedRows = gridApiRef.current.getSelectedRows();
-      setSelectedCompanyIds(selectedRows.map((row: Company) => row.id));
+      setSelectedCompanyIds(selectedRows.map((row: Company) => row.listing_id));
     }
   }, []);
 
   const selectedCompanies = leads
-    .filter((lead) => selectedCompanyIds.includes(lead.id))
-    .map((lead) => ({ id: lead.id, name: lead.name }));
+    .filter((lead) => selectedCompanyIds.includes(lead.listing_id))
+    .map((lead) => ({ id: lead.listing_id, name: lead.company_name }));
 
   const handleSaveSuccess = () => {
     setSelectedCompanyIds([]);
@@ -202,13 +210,14 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
           defaultColDef={defaultColDef}
           onGridReady={onGridReady}
           onSelectionChanged={onSelectionChanged}
-          rowSelection="multiple"
-          suppressRowClickSelection={true}
+          rowSelection={{
+            mode: 'multiRow',
+            headerCheckbox: true,
+            checkboxes: true,
+            enableClickSelection: false
+          }}
           animateRows={true}
-          pagination={true}
-          paginationPageSize={100}
-          enableRangeSelection={true}
-          rowMultiSelectWithClick={false}
+          pagination={false}
           suppressAggFuncInHeader={true}
           enableCellTextSelection={true}
           ensureDomOrder={true}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, MapPin, Filter } from 'lucide-react';
 
 export default function LeadsFilters() {
@@ -13,6 +13,12 @@ export default function LeadsFilters() {
   const [cityValue, setCityValue] = useState(searchParams?.get('city') || '');
   const [industryValue, setIndustryValue] = useState(searchParams?.get('industry') || '');
 
+  // Track previous values to detect actual filter changes
+  const prevSearchValue = useRef(searchValue);
+  const prevCityValue = useRef(cityValue);
+  const prevIndustryValue = useRef(industryValue);
+
+  // Update state when searchParams change (from external navigation)
   useEffect(() => {
     setSearchValue(searchParams?.get('query') || '');
   }, [searchParams]);
@@ -25,9 +31,25 @@ export default function LeadsFilters() {
     setIndustryValue(searchParams?.get('industry') || '');
   }, [searchParams]);
 
+  // Only update URL when filter values actually change (not on external navigation)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      const params = new URLSearchParams(searchParams);
+      // Check if any filter value actually changed
+      const searchChanged = searchValue !== prevSearchValue.current;
+      const cityChanged = cityValue !== prevCityValue.current;
+      const industryChanged = industryValue !== prevIndustryValue.current;
+
+      // If no filter changed, don't update URL (prevents page reset on pagination)
+      if (!searchChanged && !cityChanged && !industryChanged) {
+        return;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+
+      // Reset page to 1 only when filters actually change
+      if (searchChanged || cityChanged || industryChanged) {
+        params.delete('page');
+      }
 
       // Update query parameter
       if (searchValue) {
@@ -51,10 +73,15 @@ export default function LeadsFilters() {
       }
 
       router.push(`${pathname}?${params.toString()}`);
+
+      // Update previous values
+      prevSearchValue.current = searchValue;
+      prevCityValue.current = cityValue;
+      prevIndustryValue.current = industryValue;
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchValue, cityValue, industryValue, pathname, router, searchParams]);
+  }, [searchValue, cityValue, industryValue, pathname, router]);
 
   const industries = [
     { value: 'all', label: 'All Industries' },

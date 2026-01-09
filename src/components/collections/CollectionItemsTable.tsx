@@ -16,12 +16,14 @@ import { removeCompanyFromCollection } from '@/app/actions/collections';
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 interface Company {
-  id: string;
-  name: string;
-  categories: string | null;
+  listing_id: string;
+  company_name: string;
+  category_name: string | null;
   email: string | null;
-  phone: string | null;
-  address: string | null;
+  phone_number: string | null;
+  address_suburb: string | null;
+  address_state: string | null;
+  address_postcode: string | null;
 }
 
 interface CollectionItem {
@@ -56,7 +58,7 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
     },
     {
       headerName: 'Business',
-      field: 'companyinfo.name',
+      field: 'companyinfo.company_name',
       filter: true,
       sortable: true,
       width: 250,
@@ -70,7 +72,7 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
     },
     {
       headerName: 'Category',
-      field: 'companyinfo.categories',
+      field: 'companyinfo.category_name',
       filter: true,
       sortable: true,
       width: 200,
@@ -97,15 +99,15 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
                 </a>
               </div>
             )}
-            {company.phone && (
+            {company.phone_number && (
               <div className="flex items-center text-sm text-gray-600">
                 <Phone className="h-3 w-3 mr-1 text-gray-400" />
-                <a href={`tel:${company.phone}`} className="hover:text-blue-600">
-                  {company.phone}
+                <a href={`tel:${company.phone_number}`} className="hover:text-blue-600">
+                  {company.phone_number}
                 </a>
               </div>
             )}
-            {!company.email && !company.phone && (
+            {!company.email && !company.phone_number && (
               <div className="text-sm text-gray-400">No contact info</div>
             )}
           </div>
@@ -114,12 +116,19 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
     },
     {
       headerName: 'Address',
-      field: 'companyinfo.address',
       width: 300,
       cellRenderer: (params: any) => {
+        const data = params.data;
+        const company = data.companyinfo;
+        const addressParts = [
+          company.address_suburb,
+          company.address_state,
+          company.address_postcode
+        ].filter(Boolean);
+        const fullAddress = addressParts.join(', ');
         return (
           <div className="text-sm text-gray-600 truncate py-2 max-w-[280px]">
-            {params.value || '-'}
+            {fullAddress || '-'}
           </div>
         );
       },

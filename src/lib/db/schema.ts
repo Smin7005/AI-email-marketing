@@ -1,25 +1,24 @@
 import { pgTable, serial, varchar, text, integer, timestamp, boolean, jsonb, index, unique } from 'drizzle-orm/pg-core';
 import { eq, and, count, inArray } from 'drizzle-orm';
 
-// Global businesses table (no tenant isolation)
-export const businesses = pgTable('businesses', {
-  id: serial('id').primaryKey(),
-  name: varchar('name', { length: 255 }).notNull(),
-  email: varchar('email', { length: 255 }).notNull(),
-  city: varchar('city', { length: 100 }).notNull(),
-  industry: varchar('industry', { length: 100 }).notNull(),
-  description: text('description'),
-  address: text('address'),
-  phone: varchar('phone', { length: 50 }),
-  website: varchar('website', { length: 255 }),
-  abn: varchar('abn', { length: 20 }), // Australian Business Number
+// Global businesses table (no tenant isolation) - maps to rawdata_yellowpage_new
+export const businesses = pgTable('rawdata_yellowpage_new', {
+  id: serial('listing_id').primaryKey(),
+  name: varchar('company_name', { length: 255 }),
+  email: varchar('email', { length: 255 }),
+  city: varchar('address_suburb', { length: 100 }),
+  industry: varchar('category_name', { length: 100 }),
+  description: text('description_short'),
+  address: text('address_suburb'),
+  phone: varchar('phone_number', { length: 50 }),
+  website: varchar('website_url', { length: 255 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
-  emailIdx: index('businesses_email_idx').on(table.email),
-  cityIdx: index('businesses_city_idx').on(table.city),
-  industryIdx: index('businesses_industry_idx').on(table.industry),
-  cityIndustryIdx: index('businesses_city_industry_idx').on(table.city, table.industry),
+  emailIdx: index('rawdata_yellowpage_new_email_idx').on(table.email),
+  cityIdx: index('rawdata_yellowpage_new_city_idx').on(table.city),
+  industryIdx: index('rawdata_yellowpage_new_industry_idx').on(table.industry),
+  cityIndustryIdx: index('rawdata_yellowpage_new_city_industry_idx').on(table.city, table.industry),
 }));
 
 // Tenant-scoped target lists table
@@ -69,24 +68,24 @@ export const campaigns = pgTable('campaigns', {
   statusIdx: index('campaigns_status_idx').on(table.status),
 }));
 
-// Campaign items linking campaigns to businesses
+// Campaign items linking campaigns to businesses or manual entries
 export const campaignItems = pgTable('campaign_items', {
   id: serial('id').primaryKey(),
   campaignId: integer('campaign_id').references(() => campaigns.id).notNull(),
-  businessId: integer('business_id').references(() => businesses.id).notNull(),
+  businessId: integer('business_id').references(() => businesses.id), // Nullable for manual entries
   emailContent: text('email_content'), // Generated email content
   emailSubject: varchar('email_subject', { length: 255 }), // Generated subject
   status: varchar('status', { length: 50 }).default('pending').notNull(), // pending, generated, sent, failed, suppressed
   sentAt: timestamp('sent_at'),
   errorMessage: text('error_message'),
   messageId: varchar('message_id', { length: 255 }), // Email service message ID
+  metadata: jsonb('metadata'), // For manual entries: { name, email }
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
   campaignIdx: index('campaign_items_campaign_id_idx').on(table.campaignId),
   businessIdx: index('campaign_items_business_id_idx').on(table.businessId),
   statusIdx: index('campaign_items_status_idx').on(table.status),
-  uniqueBusinessPerCampaign: unique('campaign_items_unique_business_per_campaign').on(table.campaignId, table.businessId),
 }));
 
 // Email events tracking

@@ -11,7 +11,20 @@ const createCampaignSchema = z.object({
   name: z.string().min(1).max(255),
   serviceDescription: z.string().min(10).max(2000),
   emailTone: z.enum(['professional', 'friendly', 'casual', 'formal', 'enthusiastic']),
-  businessIds: z.array(z.number().positive()).min(1).max(1000),
+  businessIds: z.array(z.number().positive()).min(1).max(1000).optional(),
+  manualEmail: z.string().email().optional(),
+  manualName: z.string().optional(),
+}).refine((data) => {
+  // Either businessIds or manualEmail must be provided, but not both
+  if (!data.businessIds && !data.manualEmail) {
+    return false;
+  }
+  if (data.businessIds && data.manualEmail) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Either businessIds or manualEmail must be provided, but not both",
 });
 
 export async function GET(request: NextRequest) {
