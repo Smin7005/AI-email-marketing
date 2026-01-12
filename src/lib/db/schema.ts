@@ -177,6 +177,34 @@ export type NewOrganizationQuota = typeof organizationQuotas.$inferInsert;
 export type UserPreference = typeof userPreferences.$inferSelect;
 export type NewUserPreference = typeof userPreferences.$inferInsert;
 
+export type Collection = typeof collections.$inferSelect;
+export type NewCollection = typeof collections.$inferInsert;
+
+export type CollectionItem = typeof collectionItems.$inferSelect;
+export type NewCollectionItem = typeof collectionItems.$inferInsert;
+
+// User collections table (stores user's saved lead collections)
+export const collections = pgTable('collections', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id').notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index('collections_user_id_idx').on(table.userId),
+}));
+
+// Collection items linking collections to businesses (from DB2)
+export const collectionItems = pgTable('collection_items', {
+  id: serial('id').primaryKey(),
+  collectionId: integer('collection_id').references(() => collections.id).notNull(),
+  companyId: varchar('company_id', { length: 255 }).notNull(), // References listing_id from DB2 (no FK constraint)
+  addedAt: timestamp('added_at').defaultNow().notNull(),
+}, (table) => ({
+  collectionIdx: index('collection_items_collection_id_idx').on(table.collectionId),
+  uniqueItem: unique('collection_items_unique_item').on(table.collectionId, table.companyId),
+}));
+
 // Export enums for status fields
 export const CAMPAIGN_STATUS = {
   DRAFT: 'draft',
