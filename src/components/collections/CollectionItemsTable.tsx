@@ -29,7 +29,7 @@ interface Company {
 interface CollectionItem {
   id: string;
   collection_id: string;
-  company_id: string;
+  listing_id: string;
   created_at: string;
   companyinfo: Company;
 }
@@ -63,9 +63,11 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
       sortable: true,
       width: 250,
       cellRenderer: (params: any) => {
+        const company = params.data?.companyinfo;
+        const companyName = company?.company_name || 'Unknown';
         return (
           <div className="flex items-center py-2">
-            <div className="text-sm font-medium text-gray-900">{params.value}</div>
+            <div className="text-sm font-medium text-gray-900">{companyName}</div>
           </div>
         );
       },
@@ -77,7 +79,9 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
       sortable: true,
       width: 200,
       cellRenderer: (params: any) => {
-        return <div className="text-sm text-gray-900">{params.value || '-'}</div>;
+        const company = params.data?.companyinfo;
+        const category = company?.category_name;
+        return <div className="text-sm text-gray-900">{category || '-'}</div>;
       },
     },
     {
@@ -85,7 +89,12 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
       width: 250,
       cellRenderer: (params: any) => {
         const data = params.data;
-        const company = data.companyinfo;
+        const company = data?.companyinfo;
+
+        if (!company) {
+          return <div className="text-sm text-gray-400">No contact info</div>;
+        }
+
         return (
           <div className="space-y-1 py-2">
             {company.email && (
@@ -119,7 +128,12 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
       width: 300,
       cellRenderer: (params: any) => {
         const data = params.data;
-        const company = data.companyinfo;
+        const company = data?.companyinfo;
+
+        if (!company) {
+          return <div className="text-sm text-gray-600 truncate py-2 max-w-[280px]">-</div>;
+        }
+
         const addressParts = [
           company.address_suburb,
           company.address_state,

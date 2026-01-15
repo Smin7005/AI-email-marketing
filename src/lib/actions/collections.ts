@@ -1,7 +1,7 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { getSupabaseAdmin } from '@/lib/db/supabase';
+import { getCompanyDbClient } from '@/lib/db/company-client';
 
 export async function getUserCollections() {
   const { userId } = await auth();
@@ -10,7 +10,7 @@ export async function getUserCollections() {
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = getCompanyDbClient();
 
   const { data, error } = await supabase
     .from('collections')
@@ -48,7 +48,7 @@ export async function createCollection(name: string) {
     throw new Error('Collection name is required');
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = getCompanyDbClient();
 
   const { data, error } = await supabase
     .from('collections')
@@ -82,7 +82,7 @@ export async function addLeadsToCollection(collectionId: string, companyIds: str
     throw new Error('At least one company must be selected');
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = getCompanyDbClient();
 
   // Verify the collection belongs to the user
   const { data: collection, error: collectionError } = await supabase
@@ -96,10 +96,10 @@ export async function addLeadsToCollection(collectionId: string, companyIds: str
     throw new Error('Collection not found or access denied');
   }
 
-  // Prepare the items to insert
+  // Prepare the items to insert (companyIds are listing_ids - keep as BIGINT strings)
   const itemsToInsert = companyIds.map((companyId) => ({
-    collection_id: collectionId,
-    company_id: companyId,
+    collection_id: parseInt(collectionId, 10),
+    listing_id: parseInt(companyId, 10),
   }));
 
   // Insert the items (ignoring duplicates due to UNIQUE constraint)
@@ -135,7 +135,7 @@ export async function deleteCollection(collectionId: string) {
     throw new Error('Collection ID is required');
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = getCompanyDbClient();
 
   // Verify the collection belongs to the user
   const { data: collection, error: collectionError } = await supabase

@@ -6,13 +6,22 @@ import { CampaignForm } from '@/components/campaigns/CampaignForm';
 import { CampaignPreview } from '@/components/campaigns/CampaignPreview';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Folder, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+export const dynamic = 'force-dynamic';
 
 export default function CreateCampaignPage() {
   const router = useRouter();
-  const [selectedBusinessIds, setSelectedBusinessIds] = useState<number[]>([]);
+  const [selectedBusinessIds, setSelectedBusinessIds] = useState<string[]>([]);
   const [selectedBusinessNames, setSelectedBusinessNames] = useState<string[]>(
     []
   );
@@ -26,24 +35,75 @@ export default function CreateCampaignPage() {
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    // Get selected businesses from session storage
-    const storedIds = sessionStorage.getItem('selectedBusinesses');
-    if (storedIds) {
-      const ids = JSON.parse(storedIds);
-      setSelectedBusinessIds(ids);
+  // Collections state
+  const [collections, setCollections] = useState<Array<{ id: string; name: string; item_count: number }>>([]);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string>('');
+  const [selectedCollectionName, setSelectedCollectionName] = useState<string>('');
+  const [isLoadingCollections, setIsLoadingCollections] = useState(false);
+  const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(false);
 
-      // Also get the business names if available
-      const storedNames = sessionStorage.getItem('selectedBusinessNames');
-      if (storedNames) {
-        setSelectedBusinessNames(JSON.parse(storedNames));
+  useEffect(() => {
+    // Load user's collections when in collection mode
+    if (recipientMode === 'collection') {
+      loadCollections();
+    }
+  }, [recipientMode]);
+
+  const loadCollections = async () => {
+    setIsLoadingCollections(true);
+    try {
+      const response = await fetch('/api/collections');
+      if (!response.ok) {
+        throw new Error('Failed to load collections');
       }
+      const data = await response.json();
+      setCollections(data);
+    } catch (error) {
+      console.error('Error loading collections:', error);
+      alert('Failed to load collections. Please try again.');
+    } finally {
+      setIsLoadingCollections(false);
+    }
+  };
+
+  const handleCollectionSelect = async (collectionId: string) => {
+    if (!collectionId) {
+      setSelectedCollectionId('');
+      setSelectedCollectionName('');
+      setSelectedBusinessIds([]);
+      setSelectedBusinessNames([]);
+      return;
     }
 
-    // Clear the session storage after reading
-    sessionStorage.removeItem('selectedBusinesses');
-    sessionStorage.removeItem('selectedBusinessNames');
-  }, []);
+    const collection = collections.find((c) => c.id === collectionId);
+    if (!collection) return;
+
+    setSelectedCollectionId(collectionId);
+    setSelectedCollectionName(collection.name);
+    setIsLoadingBusinesses(true);
+
+    try {
+      // Fetch businesses from the collection
+      const response = await fetch(`/api/collections/${collectionId}/items`);
+      if (!response.ok) {
+        throw new Error('Failed to load collection items');
+      }
+      const data = await response.json();
+
+      setSelectedBusinessIds(data.ids || []);
+      setSelectedBusinessNames(data.names || []);
+
+      // Show success message
+      alert(`Loaded ${data.ids?.length || 0} businesses from "${collection.name}"`);
+    } catch (error) {
+      console.error('Error loading collection items:', error);
+      alert('Failed to load businesses from collection. Please try again.');
+      setSelectedBusinessIds([]);
+      setSelectedBusinessNames([]);
+    } finally {
+      setIsLoadingBusinesses(false);
+    }
+  };
 
   const handleSubmit = async (values: {
     name: string;
@@ -57,8 +117,12 @@ export default function CreateCampaignPage() {
         return;
       }
     } else {
+      if (!selectedCollectionId) {
+        alert('Please select a collection.');
+        return;
+      }
       if (selectedBusinessIds.length === 0) {
-        alert('No businesses selected. Please go back and select businesses first.');
+        alert('No businesses loaded from the collection. Please try selecting a different collection.');
         return;
       }
     }
@@ -80,6 +144,7 @@ export default function CreateCampaignPage() {
         }
       } else {
         requestBody.businessIds = selectedBusinessIds;
+        requestBody.collectionId = selectedCollectionId;
       }
 
       const response = await fetch('/api/campaigns', {
@@ -173,6 +238,71 @@ export default function CreateCampaignPage() {
               </div>
             </div>
           </div>
+
+          {/* Collection Selection */}
+          {recipientMode === 'collection' && (
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  Select Collection *
+                </label>
+                {isLoadingCollections ? (
+                  <div className="flex items-center justify-center h-10 rounded-md border border-input bg-background px-3 py-2">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span className="text-sm text-muted-foreground">Loading collections...</span>
+                  </div>
+                ) : collections.length === 0 ? (
+                  <div className="text-center py-8 border border-dashed rounded-md">
+                    <Folder className="mx-auto h-12 w-12 text-gray-400" />
+                    <p className="mt-2 text-sm text-gray-600">No collections found</p>
+                    <p className="text-xs text-gray-500">Save businesses to collections from the Leads page first</p>
+                  </div>
+                ) : (
+                  <Select
+                    value={selectedCollectionId}
+                    onValueChange={(value) => handleCollectionSelect(value)}
+                    disabled={isLoadingCollections || collections.length === 0}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a collection..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {collections.map((col) => (
+                        <SelectItem key={col.id} value={col.id}>
+                          {col.name} ({col.item_count} businesses)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              {/* Loading businesses indicator */}
+              {isLoadingBusinesses && (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  <span className="text-sm text-muted-foreground">Loading businesses...</span>
+                </div>
+              )}
+
+              {/* Collection summary */}
+              {selectedCollectionId && !isLoadingBusinesses && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-start">
+                    <Folder className="h-5 w-5 text-blue-600 mr-2 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-900">
+                        {selectedCollectionName}
+                      </p>
+                      <p className="text-xs text-blue-700">
+                        {selectedBusinessIds.length} businesses selected
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Manual Entry Fields */}
           {recipientMode === 'manual' && (

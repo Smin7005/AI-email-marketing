@@ -8,6 +8,13 @@
       "when": 1764916515766,
       "tag": "0000_lame_firelord",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1768439643239,
+      "tag": "1768439643239_add_collections",
+      "breakpoints": true
     }
   ]
 }

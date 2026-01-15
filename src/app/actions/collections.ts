@@ -1,6 +1,6 @@
 'use server';
 
-import { getSupabaseAdmin } from '@/lib/db/supabase';
+import { getCompanyDbClient } from '@/lib/db/company-client';
 import { auth } from '@clerk/nextjs/server';
 
 export async function removeCompanyFromCollection(collectionItemId: string, collectionId: string) {
@@ -10,7 +10,7 @@ export async function removeCompanyFromCollection(collectionItemId: string, coll
     throw new Error('Unauthorized');
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = getCompanyDbClient();
 
   // Verify the collection belongs to the user
   const { data: collection, error: collectionError } = await supabase
