@@ -73,7 +73,8 @@
       "WebFetch(domain:aiemailplatform-70vtoiyhm-hongbing-xiangs-projects.vercel.app)",
       "WebFetch(domain:aiemailplatform-1so85th6y-hongbing-xiangs-projects.vercel.app)",
       "Bash(node:*)",
-      "Bash('https://ctdrapmcjefjqhhdyalg.supabase.co/rest/v1/rpc/exec_sql' )"
+      "Bash('https://ctdrapmcjefjqhhdyalg.supabase.co/rest/v1/rpc/exec_sql' )",
+      "mcp__filesystem__read_text_file"
     ],
     "deny": [],
     "ask": []
