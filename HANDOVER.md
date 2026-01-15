@@ -1,4 +1,5 @@
 # Project Handover Document
+
 ## AI Email Marketing Platform - SaaS Application
 
 ---
@@ -18,12 +19,14 @@
 ## 🛠️ Technology Stack
 
 ### Core Framework & Runtime
+
 - **Next.js:** 14.2.25 (App Router)
 - **React:** 18.2.0
 - **TypeScript:** 5.x
 - **Node.js:** 22.x
 
 ### UI & Styling
+
 - **Tailwind CSS:** 4.x
 - **Shadcn/ui:** Component library based on Radix UI
 - **Radix UI:** Primitives (Popover, Select, Checkbox, Label, etc.)
@@ -32,6 +35,7 @@
 - **cmdk:** Command palette component
 
 ### Database & ORM
+
 - **PostgreSQL:** Primary database
 - **Drizzle ORM:** 0.45.x with postgres-js driver
 - **Supabase:** Database hosting & management
@@ -40,19 +44,23 @@
   2. **Production Database** (zujqziqteggihirewuxf.supabase.co) - Business data (120k+ leads)
 
 ### Authentication & Authorization
+
 - **Clerk:** User authentication & session management
 - **Supabase Auth:** Additional auth layer (service role)
 
 ### Email & Communication
+
 - **Resend:** Email sending service
 - **AWS SES:** Backup email service (SDK v3)
 - **Inngest:** Background job processing & email generation
 
 ### AI & External Services
+
 - **OpenAI GPT:** Email content generation
 - **Inngest:** Serverless function orchestration
 
 ### Development & Deployment
+
 - **Vercel:** Primary deployment platform
 - **Drizzle Kit:** Database schema management & migrations
 - **ESLint & Prettier:** Code linting & formatting
@@ -66,6 +74,7 @@
 The application uses a **dual-database architecture** with a recent migration to **single-database for Collections**:
 
 #### 1. User Database (ctdrapmcjefjqhhdyalg.supabase.co)
+
 - **Purpose:** User authentication, organization management, campaign data
 - **Tables:**
   - `campaigns` - Email campaigns (tenant-scoped by organization_id)
@@ -77,6 +86,7 @@ The application uses a **dual-database architecture** with a recent migration to
   - `user_preferences` - User settings
 
 #### 2. Production Database (zujqziqteggihirewuxf.supabase.co)
+
 - **Purpose:** Business lead data (120k+ companies)
 - **Tables:**
   - `rawdata_yellowpage_new` - Business directory (company_name, email, phone, address, industry)
@@ -88,18 +98,21 @@ The application uses a **dual-database architecture** with a recent migration to
 **Status:** ✅ **COMPLETE** - Code deployed, awaiting SQL migration execution
 
 **Problem Solved:**
+
 - Previously: Hybrid architecture with manual array joins between databases
 - Now: Single Production Database with SQL JOINs
 
 **Migration Script:** `PRODUCTION_DB_COLLECTIONS_MIGRATION.sql`
 
 **Key Benefits:**
+
 - Eliminates BigInt serialization issues
 - Better performance with database-level JOINs
 - Simpler code architecture
 - Proper foreign key constraints
 
 **Data Flow:**
+
 ```
 Leads (Production DB) → Collections (Production DB) → Campaigns (User DB)
                                 ↓
@@ -191,9 +204,11 @@ src/
 ## 🎯 Key Features
 
 ### 1. Lead Management
+
 **Location:** `/src/app/(dashboard)/leads`
 
 **Functionality:**
+
 - Browse 120k+ business leads from Production Database
 - **AG Grid** for high-performance data display
 - Filters: Industry, Location, Company Size
@@ -201,13 +216,16 @@ src/
 - Select leads for collection or campaign
 
 **Key Files:**
+
 - `src/app/api/businesses/route.ts` - Lead data API
 - `src/app/(dashboard)/leads/page.tsx` - Main leads page
 
 ### 2. Collections (Recently Completed)
+
 **Location:** `/src/app/(dashboard)/collections`
 
 **Functionality:**
+
 - Create named collections of leads
 - Add/remove leads from collections
 - View collection details in AG Grid table
@@ -215,6 +233,7 @@ src/
 - **Status:** ✅ Fully implemented, migrated to single-DB architecture
 
 **Key Files:**
+
 - `src/app/api/collections/route.ts` - Collections API
 - `src/app/(dashboard)/collections/[id]/page.tsx` - Collection detail
 - `src/components/collections/CollectionItemsTable.tsx` - Table component
@@ -224,9 +243,11 @@ src/
 **Migration:** `PRODUCTION_DB_COLLECTIONS_MIGRATION.sql` ⚠️ **Must be executed in Supabase Production DB**
 
 ### 3. Campaign Management
+
 **Location:** `/src/app/(dashboard)/campaigns`
 
 **Functionality:**
+
 - Create email campaigns from leads/collections
 - AI-powered email content generation (OpenAI GPT)
 - Multiple tones: Professional, Casual, Friendly, Formal
@@ -234,32 +255,39 @@ src/
 - Campaign status: Draft → Generating → Ready → Sending → Sent
 
 **Key Files:**
+
 - `src/app/api/campaigns/` - Campaign CRUD endpoints
 - `src/app/(dashboard)/campaigns/create/page.tsx` - Creation flow
 - `src/app/(dashboard)/campaigns/[id]/page.tsx` - Campaign detail
 
 ### 4. Analytics & Tracking
+
 **Location:** `/src/app/(dashboard)/analytics`
 
 **Functionality:**
+
 - Campaign performance metrics
 - Email delivery tracking
 - Open/click rate analytics
 - Bounce and suppression tracking
 
 **Key Files:**
+
 - `src/app/api/analytics/` - Analytics endpoints
 - `src/app/api/webhooks/email-events` - Email service webhooks
 
 ### 5. Background Job Processing
+
 **Framework:** Inngest
 
 **Functions:**
+
 - Email content generation using OpenAI
 - Email delivery orchestration
 - Campaign status updates
 
 **Key Files:**
+
 - `src/inngest/functions/generate-emails.ts`
 - `src/app/api/inngest/route.ts`
 
@@ -314,16 +342,19 @@ APP_URL=http://localhost:3000
 ### Database Migrations
 
 **Run migrations:**
+
 ```bash
 npm run db:migrate
 ```
 
 **Generate Drizzle types:**
+
 ```bash
 npm run db:gen-types
 ```
 
 **Access Drizzle Studio:**
+
 ```bash
 npm run db:studio
 ```
@@ -333,6 +364,7 @@ npm run db:studio
 ## 🚀 Current Status & Known Issues
 
 ### ✅ Completed Features
+
 - [x] User authentication (Clerk)
 - [x] Lead browsing & filtering (AG Grid)
 - [x] Collections feature (fully functional)
@@ -346,12 +378,14 @@ npm run db:studio
 ### ⚠️ Known Issues & TODOs
 
 #### 1. **Collections Database Migration** - ⚠️ **CRITICAL**
+
 - **Status:** Code deployed, SQL migration pending execution
 - **Action Required:** Execute `PRODUCTION_DB_COLLECTIONS_MIGRATION.sql` in Production Database
 - **Location:** https://zujqziqteggihirewuxf.supabase.co → SQL Editor
 - **Impact:** Collections feature won't work until migration runs
 
 #### 2. **Combobox Component Stability** - ⚠️ **MEDIUM**
+
 - **Location:** `src/components/ui/combobox.tsx`
 - **Issue:** Interactivity issues with search input
 - **Current Workaround:** Using standard Shadcn `Select` component instead
@@ -363,12 +397,14 @@ npm run db:studio
   - `src/components/ui/command.tsx`
 
 #### 3. **Email Sending Implementation** - ⚠️ **LOW**
+
 - **Location:** `src/inngest/functions/generate-emails.ts:203`
 - **Issue:** TODO comment indicates email sending logic needs implementation
 - **Current:** AI generates emails but doesn't send them
 - **Status:** Feature exists but not fully implemented
 
 #### 4. **BigInt Serialization** - ✅ **RESOLVED**
+
 - **Issue:** React Client Components couldn't handle PostgreSQL BigInt types
 - **Solution:** Explicit `.toString()` conversion in server components before passing to client
 - **Files:**
@@ -376,6 +412,7 @@ npm run db:studio
   - `src/components/collections/CollectionItemsTable.tsx` (defensive rendering)
 
 #### 5. **Dual Database Complexity** - ℹ️ **ARCHITECTURAL**
+
 - **Issue:** Campaigns live in User DB, while Collections/Leads live in Production DB.
 - **Impact:** Cannot create Foreign Key constraints between Campaigns and Collections. Requires maintaining two separate database connections (`supabase.ts` vs `company-client.ts`).
 - **Recommendation:** Future developers should consider migrating Campaign tables to the Production Database to achieve a true Single-Database architecture.
@@ -383,6 +420,7 @@ npm run db:studio
 ### 🔄 Recent Changes (Latest Commit)
 
 1. **Collections Migration Complete**
+
    - Migrated from hybrid DB to single Production DB
    - Fixed BigInt serialization issues
    - Added SQL migration script
@@ -400,6 +438,7 @@ npm run db:studio
 ### Key Tables
 
 #### Collections (Recently Migrated)
+
 ```sql
 collections (
   id: serial PRIMARY KEY,
@@ -419,6 +458,7 @@ collection_items (
 ```
 
 #### Business Data (Production DB)
+
 ```sql
 rawdata_yellowpage_new (
   listing_id: serial PRIMARY KEY,  -- BigInt in DB
@@ -435,6 +475,7 @@ rawdata_yellowpage_new (
 ```
 
 #### Campaigns (User DB)
+
 ```sql
 campaigns (
   id: serial PRIMARY KEY,
@@ -458,16 +499,19 @@ campaigns (
 ## 🔐 Security & Permissions
 
 ### Database Access
+
 - **User Database:** Full read/write with service role
 - **Production Database:** Read-only access for lead data
 - **Collections:** Recently migrated to Production DB with FK to rawdata_yellowpage_new
 
 ### Authentication
+
 - **Primary:** Clerk for user auth
 - **Secondary:** Supabase for service-level operations
 - **Tenant Isolation:** All user data scoped by `organization_id`
 
 ### Environment Security
+
 - All sensitive keys in `.env.local` (not committed)
 - Service role keys have full DB access (⚠️ **Handle with care**)
 - API keys for external services (OpenAI, Resend, Inngest)
@@ -477,6 +521,7 @@ campaigns (
 ## 📊 API Endpoints
 
 ### Collections ✅
+
 - `GET /api/collections` - List user's collections
 - `POST /api/collections` - Create collection
 - `DELETE /api/collections/[id]` - Delete collection
@@ -485,6 +530,7 @@ campaigns (
 - `DELETE /api/collections/[id]/items/[itemId]` - Remove item from collection
 
 ### Campaigns
+
 - `GET /api/campaigns` - List campaigns
 - `POST /api/campaigns` - Create campaign
 - `GET /api/campaigns/[id]` - Get campaign details
@@ -494,10 +540,12 @@ campaigns (
 - `POST /api/campaigns/[id]/send` - Send campaign
 
 ### Analytics
+
 - `GET /api/analytics` - Overall analytics
 - `GET /api/analytics/campaigns/[id]` - Campaign-specific analytics
 
 ### Webhooks
+
 - `POST /api/webhooks/email-events` - Email service event tracking
 
 ---
@@ -507,12 +555,14 @@ campaigns (
 ### Manual Testing Checklist
 
 1. **Leads Page**
+
    - [ ] Load leads with AG Grid
    - [ ] Apply filters (industry, location)
    - [ ] Search functionality
    - [ ] Select leads for collection
 
 2. **Collections** (⚠️ Requires migration execution)
+
    - [ ] Create new collection
    - [ ] Add leads to collection
    - [ ] View collection details
@@ -527,6 +577,7 @@ campaigns (
    - [ ] Track analytics
 
 ### Testing Commands
+
 ```bash
 # Run development server
 npm run dev
@@ -552,6 +603,7 @@ npm run db:migrate
 **Branch:** `1-b2b-email-marketing`
 
 **Deployment Process:**
+
 1. Code pushed to `1-b2b-email-marketing` branch
 2. Vercel auto-deploys on push
 3. Environment variables configured in Vercel dashboard
@@ -566,19 +618,16 @@ npm run db:migrate
 ### Immediate Tasks (High Priority)
 
 1. **⚠️ Execute Collections Migration**
+
    ```bash
    # Go to: https://zujqziqteggihirewuxf.supabase.co
    # Navigate to: SQL Editor → New Query
    # Copy & run: PRODUCTION_DB_COLLECTIONS_MIGRATION.sql
    ```
+
    - This is **CRITICAL** - Collections feature won't work without it
 
-2. **Environment Setup**
-   - Copy `.env.local.template` to `.env.local`
-   - Fill in all API keys (Clerk, Supabase, OpenAI, Resend, Inngest)
-   - Request access to both Supabase databases
-
-3. **Verify Functionality**
+2. **Verify Functionality**
    - Test lead browsing
    - Test collection creation (after migration)
    - Test campaign creation
@@ -586,11 +635,13 @@ npm run db:migrate
 ### Short-term Improvements (Medium Priority)
 
 4. **Fix Combobox Component**
+
    - Debug interactivity issues in `combobox.tsx`
    - Replace Select with Combobox for better UX
    - Add searchable collection selection
 
 5. **Implement Email Sending**
+
    - Complete TODO in `generate-emails.ts:203`
    - Integrate with Resend API
    - Test end-to-end campaign delivery
@@ -603,11 +654,13 @@ npm run db:migrate
 ### Long-term Enhancements (Low Priority)
 
 7. **Performance Optimization**
+
    - Implement caching for lead queries
    - Add pagination to large datasets
    - Optimize AG Grid rendering
 
 8. **Feature Additions**
+
    - Email templates library
    - A/B testing for campaigns
    - Advanced analytics dashboard
@@ -624,12 +677,14 @@ npm run db:migrate
 ## 🔗 Resources & Documentation
 
 ### Internal Documentation
+
 - `COLLECTIONS_MIGRATION_COMPLETE.md` - Collections feature guide
 - `COLLECTIONS_TABLE_FIX.md` - BigInt serialization fix
 - `LEADS_PAGE_IMPLEMENTATION.md` - Leads feature details
 - `COMPANY_DATA_IMPORT.md` - Production DB data guide
 
 ### External Resources
+
 - [Next.js Docs](https://nextjs.org/docs)
 - [Drizzle ORM](https://orm.drizzle.team/)
 - [Supabase Docs](https://supabase.com/docs)
@@ -639,6 +694,7 @@ npm run db:migrate
 - [Inngest](https://www.inngest.com/docs)
 
 ### Database Access
+
 - **User DB:** https://supabase.com/dashboard/project/ctdrapmcjefjqhhdyalg
 - **Production DB:** https://supabase.com/dashboard/project/zujqziqteggihirewuxf
 
@@ -678,13 +734,14 @@ PostgreSQL BigInt types require explicit conversion:
 
 ```typescript
 // ❌ Wrong - BigInt can't be serialized to JSON
-const id = row.listing_id;  // BigInt
+const id = row.listing_id; // BigInt
 
 // ✅ Correct - Convert to string for React
-const id = row.listing_id?.toString();  // string
+const id = row.listing_id?.toString(); // string
 ```
 
 This is handled in:
+
 - `src/app/(dashboard)/collections/[id]/page.tsx` (lines 84-86)
 - All API routes returning BigInt values
 
@@ -705,7 +762,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
   defaultColDef={defaultColDef}
   onGridReady={onGridReady}
   onSelectionChanged={onSelectionChanged}
-/>
+/>;
 ```
 
 ### Server Actions Pattern
@@ -728,4 +785,4 @@ await createCollection({ name, userId });
 
 ---
 
-*This document was created as part of project handover. For questions or clarifications, please refer to the codebase or contact the previous developer.*
+_This document was created as part of project handover. For questions or clarifications, please refer to the codebase or contact the previous developer._
