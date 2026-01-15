@@ -45,3 +45,6 @@ next-env.d.ts
 
 # for reference
 /docs
+
+# clerk configuration (can include secrets)
+/.clerk/
