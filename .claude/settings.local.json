@@ -75,7 +75,8 @@
       "Bash(node:*)",
       "Bash('https://ctdrapmcjefjqhhdyalg.supabase.co/rest/v1/rpc/exec_sql' )",
       "Bash(cd:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "mcp__filesystem__read_text_file"
     ],
     "deny": [],
     "ask": []
