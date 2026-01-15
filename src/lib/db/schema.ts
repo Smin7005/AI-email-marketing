@@ -194,15 +194,16 @@ export const collections = pgTable('collections', {
   userIdx: index('collections_user_id_idx').on(table.userId),
 }));
 
-// Collection items linking collections to businesses (from DB2)
+// Collection items linking collections to businesses (references rawdata_yellowpage_new.listing_id)
 export const collectionItems = pgTable('collection_items', {
   id: serial('id').primaryKey(),
   collectionId: integer('collection_id').references(() => collections.id).notNull(),
-  companyId: varchar('company_id', { length: 255 }).notNull(), // References listing_id from DB2 (no FK constraint)
+  businessId: integer('business_id').references(() => businesses.id).notNull(), // FK to rawdata_yellowpage_new.listing_id
   addedAt: timestamp('added_at').defaultNow().notNull(),
 }, (table) => ({
   collectionIdx: index('collection_items_collection_id_idx').on(table.collectionId),
-  uniqueItem: unique('collection_items_unique_item').on(table.collectionId, table.companyId),
+  businessIdx: index('collection_items_business_id_idx').on(table.businessId),
+  uniqueItem: unique('collection_items_unique_item').on(table.collectionId, table.businessId),
 }));
 
 // Export enums for status fields

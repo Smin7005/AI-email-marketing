@@ -1,4 +1,3 @@
-import { getSupabaseAdmin } from '@/lib/db/supabase';
 import { getCompanyDbClient } from '@/lib/db/company-client';
 import { auth } from '@clerk/nextjs/server';
 import CollectionItemsTable from '@/components/collections/CollectionItemsTable';
@@ -14,7 +13,7 @@ interface Collection {
 interface CollectionItem {
   id: string;
   collection_id: string;
-  company_id: string;
+  listing_id: string;
   created_at: string;
   companyinfo: {
     listing_id: string;
@@ -29,7 +28,7 @@ interface CollectionItem {
 }
 
 async function getCollection(id: string, userId: string): Promise<Collection | null> {
-  const supabase = getSupabaseAdmin();
+  const supabase = getCompanyDbClient();
 
   const { data, error } = await supabase
     .from('collections')
@@ -47,11 +46,11 @@ async function getCollection(id: string, userId: string): Promise<Collection | n
 }
 
 async function getCollectionItems(id: string): Promise<CollectionItem[]> {
-  // Step 1: Get collection items from DB1 (User DB) - only get company_ids
-  const supabaseAdmin = getSupabaseAdmin();
-  const { data: collectionItems, error } = await supabaseAdmin
+  // Step 1: Get collection items from Production DB
+  const supabase = getCompanyDbClient();
+  const { data: collectionItems, error } = await supabase
     .from('collection_items')
-    .select('id, collection_id, company_id, created_at')
+    .select('id, collection_id, listing_id, created_at')
     .eq('collection_id', id);
 
   if (error) {
@@ -63,15 +62,14 @@ async function getCollectionItems(id: string): Promise<CollectionItem[]> {
     return [];
   }
 
-  // Step 2: Extract company IDs
-  const companyIds = collectionItems.map(item => item.company_id);
+  // Step 2: Extract listing IDs
+  const listingIds = collectionItems.map(item => item.listing_id);
 
-  // Step 3: Fetch company details from DB2 (Company DB)
-  const companyDb = getCompanyDbClient();
-  const { data: companies, error: companiesError } = await companyDb
+  // Step 3: Fetch company details from Production DB
+  const { data: companies, error: companiesError } = await supabase
     .from('rawdata_yellowpage_new')
     .select('listing_id, company_name, category_name, email, phone_number, address_suburb, address_state, address_postcode')
-    .in('listing_id', companyIds);
+    .in('listing_id', listingIds);
 
   if (companiesError) {
     console.error('Error fetching company details:', companiesError);
@@ -80,11 +78,15 @@ async function getCollectionItems(id: string): Promise<CollectionItem[]> {
 
   // Step 4: Merge the data - application-level join
   const items = collectionItems.map(collectionItem => {
-    const companyInfo = companies?.find(c => c.listing_id === collectionItem.company_id);
+    const companyInfo = companies?.find(c => c.listing_id?.toString() === collectionItem.listing_id?.toString());
     return {
-      ...collectionItem,
+      // Explicitly convert all BigInt fields to strings for React compatibility
+      id: collectionItem.id?.toString(),
+      collection_id: collectionItem.collection_id?.toString(),
+      listing_id: collectionItem.listing_id?.toString(),
+      created_at: collectionItem.created_at,
       companyinfo: companyInfo || {
-        listing_id: collectionItem.company_id,
+        listing_id: collectionItem.listing_id?.toString(),
         company_name: 'Unknown',
         category_name: null,
         email: null,
