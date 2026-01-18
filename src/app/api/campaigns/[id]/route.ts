@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { campaignService } from '@/lib/services/campaign';
+import { campaignService } from '@/lib/services/campaign-supabase';
 
 export async function GET(
   request: NextRequest,

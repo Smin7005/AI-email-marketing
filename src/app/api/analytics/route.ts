@@ -1,80 +1,107 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { campaigns, campaignItems, emailEvents } from '@/lib/db/schema';
-import { eq, and, gte, lte, desc, inArray } from 'drizzle-orm';
+import { auth } from '@clerk/nextjs/server';
+import { getCompanyDbClient } from '@/lib/db/supabase';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    // Get auth context
+    const session = await auth();
+    if (!session?.userId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const effectiveOrgId = session.orgId || session.userId || 'personal-workspace';
+
     const { searchParams } = new URL(request.url);
-    const organizationId = searchParams.get('organizationId');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    if (!organizationId) {
+    const supabase = getCompanyDbClient();
+
+    // Build query for campaigns
+    let campaignQuery = supabase
+      .from('campaigns')
+      .select('id, name, status, created_at, total_recipients')
+      .eq('organization_id', effectiveOrgId)
+      .order('created_at', { ascending: false });
+
+    if (startDate) {
+      campaignQuery = campaignQuery.gte('created_at', startDate);
+    }
+    if (endDate) {
+      campaignQuery = campaignQuery.lte('created_at', endDate);
+    }
+
+    const { data: orgCampaigns, error: campaignsError } = await campaignQuery;
+
+    if (campaignsError) {
+      console.error('Error fetching campaigns:', campaignsError);
       return NextResponse.json(
-        { error: 'Organization ID is required' },
-        { status: 400 }
+        { error: 'Failed to fetch campaigns' },
+        { status: 500 }
       );
     }
 
-    // Build date filter
-    let dateFilter;
-    if (startDate && endDate) {
-      dateFilter = and(
-        gte(campaigns.createdAt, new Date(startDate)),
-        lte(campaigns.createdAt, new Date(endDate))
-      );
+    if (!orgCampaigns || orgCampaigns.length === 0) {
+      // Return empty analytics if no campaigns
+      return NextResponse.json({
+        summary: {
+          totalCampaigns: 0,
+          totalEmails: 0,
+          sentEmails: 0,
+          openedEmails: 0,
+          clickedEmails: 0,
+          openRate: 0,
+          clickRate: 0,
+          bounceCount: 0,
+          complaintCount: 0,
+        },
+        campaigns: [],
+        recentActivity: [],
+      });
     }
-
-    // Get all campaigns for this organization
-    const orgCampaigns = await db
-      .select({
-        id: campaigns.id,
-        name: campaigns.name,
-        status: campaigns.status,
-        createdAt: campaigns.createdAt,
-        totalRecipients: campaigns.totalRecipients,
-      })
-      .from(campaigns)
-      .where(
-        dateFilter
-          ? and(eq(campaigns.organizationId, organizationId), dateFilter)
-          : eq(campaigns.organizationId, organizationId)
-      )
-      .orderBy(desc(campaigns.createdAt));
 
     // Get campaign IDs
     const campaignIds = orgCampaigns.map(c => c.id);
 
     // Get all campaign items for these campaigns
-    const allItems = campaignIds.length > 0 ? await db
-      .select({
-        campaignId: campaignItems.campaignId,
-        status: campaignItems.status,
-      })
-      .from(campaignItems)
-      .where(inArray(campaignItems.campaignId, campaignIds)) : [];
+    const { data: allItems, error: itemsError } = await supabase
+      .from('campaign_items')
+      .select('campaign_id, status')
+      .in('campaign_id', campaignIds);
+
+    if (itemsError) {
+      console.error('Error fetching campaign items:', itemsError);
+    }
+
+    const items = allItems || [];
 
     // Get all email events for these campaigns
-    const allEvents = campaignIds.length > 0 ? await db
-      .select({
-        campaignId: emailEvents.campaignId,
-        eventType: emailEvents.eventType,
-      })
-      .from(emailEvents)
-      .where(inArray(emailEvents.campaignId, campaignIds)) : [];
+    const { data: allEvents, error: eventsError } = await supabase
+      .from('email_events')
+      .select('campaign_id, event_type')
+      .in('campaign_id', campaignIds);
+
+    if (eventsError) {
+      console.error('Error fetching email events:', eventsError);
+    }
+
+    const events = allEvents || [];
 
     // Calculate aggregate stats
-    const totalEmails = allItems.length;
-    const sentEmails = allItems.filter(item =>
+    const totalEmails = items.length;
+    const sentEmails = items.filter(item =>
       ['sent', 'opened', 'clicked'].includes(item.status)
     ).length;
-    const openedEmails = allItems.filter(item =>
+    const openedEmails = items.filter(item =>
       ['opened', 'clicked'].includes(item.status)
     ).length;
-    const clickedEmails = allItems.filter(item =>
+    const clickedEmails = items.filter(item =>
       item.status === 'clicked'
     ).length;
 
@@ -83,59 +110,56 @@ export async function GET(request: NextRequest) {
     const clickRate = sentEmails > 0 ? (clickedEmails / sentEmails) * 100 : 0;
 
     // Count events by type
-    const eventCounts = allEvents.reduce((acc, event) => {
-      acc[event.eventType] = (acc[event.eventType] || 0) + 1;
+    const eventCounts = events.reduce((acc, event) => {
+      acc[event.event_type] = (acc[event.event_type] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
     // Get recent activity (last 20 events)
-    const recentActivity = campaignIds.length > 0 ? await db
-      .select({
-        id: emailEvents.id,
-        campaignId: emailEvents.campaignId,
-        eventType: emailEvents.eventType,
-        eventData: emailEvents.eventData,
-        occurredAt: emailEvents.occurredAt,
-      })
-      .from(emailEvents)
-      .where(inArray(emailEvents.campaignId, campaignIds))
-      .orderBy(desc(emailEvents.occurredAt))
-      .limit(20) : [];
+    const { data: recentActivity, error: activityError } = await supabase
+      .from('email_events')
+      .select('id, campaign_id, event_type, event_data, occurred_at')
+      .in('campaign_id', campaignIds)
+      .order('occurred_at', { ascending: false })
+      .limit(20);
+
+    if (activityError) {
+      console.error('Error fetching recent activity:', activityError);
+    }
 
     // Format recent activity
-    const formattedActivity = recentActivity.map((activity) => {
-      const eventData = activity.eventData as any;
+    const formattedActivity = (recentActivity || []).map((activity) => {
       let description = '';
 
-      switch (activity.eventType) {
+      switch (activity.event_type) {
         case 'delivered':
-          description = `Email delivered`;
+          description = 'Email delivered';
           break;
         case 'opened':
-          description = `Email opened`;
+          description = 'Email opened';
           break;
         case 'clicked':
-          description = `Link clicked`;
+          description = 'Link clicked';
           break;
         case 'bounced':
-          description = `Email bounced`;
+          description = 'Email bounced';
           break;
         case 'complained':
-          description = `Spam complaint`;
+          description = 'Spam complaint';
           break;
         default:
-          description = `Email ${activity.eventType}`;
+          description = `Email ${activity.event_type}`;
       }
 
       // Find campaign name
-      const campaign = orgCampaigns.find(c => c.id === activity.campaignId);
+      const campaign = orgCampaigns.find(c => c.id === activity.campaign_id);
 
       return {
         id: activity.id,
-        type: activity.eventType,
+        type: activity.event_type,
         description,
         campaignName: campaign?.name || 'Unknown Campaign',
-        occurredAt: activity.occurredAt,
+        occurredAt: activity.occurred_at,
       };
     });
 
@@ -152,16 +176,15 @@ export async function GET(request: NextRequest) {
         complaintCount: eventCounts.complained || 0,
       },
       campaigns: orgCampaigns.map(campaign => {
-        const items = allItems.filter(item => item.campaignId === campaign.id);
-        const events = allEvents.filter(event => event.campaignId === campaign.id);
+        const campaignItems = items.filter(item => item.campaign_id === campaign.id);
 
-        const sent = items.filter(item =>
+        const sent = campaignItems.filter(item =>
           ['sent', 'opened', 'clicked'].includes(item.status)
         ).length;
-        const opened = items.filter(item =>
+        const opened = campaignItems.filter(item =>
           ['opened', 'clicked'].includes(item.status)
         ).length;
-        const clicked = items.filter(item =>
+        const clicked = campaignItems.filter(item =>
           item.status === 'clicked'
         ).length;
 
@@ -169,8 +192,8 @@ export async function GET(request: NextRequest) {
           id: campaign.id,
           name: campaign.name,
           status: campaign.status,
-          createdAt: campaign.createdAt,
-          totalEmails: items.length,
+          createdAt: campaign.created_at,
+          totalEmails: campaignItems.length,
           sentEmails: sent,
           openRate: sent > 0 ? (opened / sent) * 100 : 0,
           clickRate: sent > 0 ? (clicked / sent) * 100 : 0,

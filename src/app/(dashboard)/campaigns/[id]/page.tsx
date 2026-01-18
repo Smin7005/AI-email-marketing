@@ -1,14 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Play, RefreshCw, Mail, Send, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Play, Send, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import CampaignActivity from '@/components/campaign/campaign-activity';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Campaign {
   id: number;
@@ -43,6 +53,7 @@ export default function CampaignDetailPage() {
   const [isSendingCampaign, setIsSendingCampaign] = useState(false);
   const [expandedItemId, setExpandedItemId] = useState<number | null>(null);
   const [copiedItemId, setCopiedItemId] = useState<number | null>(null);
+  const [showSendConfirmation, setShowSendConfirmation] = useState(false);
 
   const {
     data: campaign,
@@ -71,7 +82,6 @@ export default function CampaignDetailPage() {
         throw new Error('Failed to fetch campaign items');
       }
       const data = await response.json();
-      console.log('[FRONTEND] Received campaign items:', data);
       return data;
     },
     refetchInterval: (data) => {
@@ -135,6 +145,11 @@ export default function CampaignDetailPage() {
   };
 
   const handleSendCampaign = () => {
+    setShowSendConfirmation(true);
+  };
+
+  const confirmSendCampaign = () => {
+    setShowSendConfirmation(false);
     setIsSendingCampaign(true);
     sendCampaignMutation.mutate();
   };
@@ -160,8 +175,6 @@ export default function CampaignDetailPage() {
   };
 
   const toggleExpandItem = (itemId: number) => {
-    console.log('[UI] Clicked item:', itemId, 'Expanding...');
-    console.log('[UI] Current expanded ID:', expandedItemId);
     setExpandedItemId(expandedItemId === itemId ? null : itemId);
   };
 
@@ -266,10 +279,22 @@ export default function CampaignDetailPage() {
             <Button
               onClick={handleSendCampaign}
               disabled={isSendingCampaign}
+              className="bg-green-600 hover:bg-green-700"
             >
               <Send className="w-4 h-4 mr-2" />
-              {isSendingCampaign ? 'Sending...' : 'Send Campaign'}
+              Review & Send Campaign
             </Button>
+          )}
+          {campaign.status === 'sending' && (
+            <Badge variant="default" className="bg-blue-500 animate-pulse px-4 py-2">
+              <Send className="w-4 h-4 mr-2 animate-spin" />
+              Sending in Progress...
+            </Badge>
+          )}
+          {campaign.status === 'sent' && (
+            <Badge variant="default" className="bg-green-600 px-4 py-2">
+              Campaign Sent Successfully
+            </Badge>
           )}
         </div>
 
@@ -416,9 +441,7 @@ export default function CampaignDetailPage() {
           </div>
         ) : campaignItems && campaignItems.length > 0 ? (
           <div className="space-y-4">
-            {campaignItems.map((item) => {
-              console.log('[UI] Rendering item:', item.id, 'businessName:', item.businessName, 'expanded:', expandedItemId === item.id);
-              return (
+            {campaignItems.map((item) => (
                 <Card
                   key={item.id}
                   className={`mb-4 transition-all duration-200 ${expandedItemId === item.id ? 'border-2 border-blue-500 shadow-md ring-1 ring-blue-500' : 'border border-gray-200'}`}
@@ -460,8 +483,7 @@ export default function CampaignDetailPage() {
                     </div>
                   )}
                 </Card>
-              );
-            })}
+            ))}
           </div>
         ) : (
           <Card>
@@ -474,6 +496,45 @@ export default function CampaignDetailPage() {
           </Card>
         )}
       </div>
+
+      {/* Send Confirmation Dialog */}
+      <AlertDialog open={showSendConfirmation} onOpenChange={setShowSendConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-yellow-500" />
+              Confirm Campaign Send
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                You are about to send <strong>{campaign?.name}</strong> to{' '}
+                <strong>{campaign?.totalRecipients} recipients</strong>.
+              </p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm">
+                <p className="font-medium text-yellow-800">Before sending, please verify:</p>
+                <ul className="list-disc list-inside mt-2 text-yellow-700 space-y-1">
+                  <li>All email content has been reviewed</li>
+                  <li>Recipient list is correct</li>
+                  <li>Sender email is properly configured</li>
+                </ul>
+              </div>
+              <p className="text-sm text-gray-500">
+                This action cannot be undone. Emails will be sent immediately.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmSendCampaign}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Send Campaign Now
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

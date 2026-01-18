@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { UserProfile } from '@clerk/nextjs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,7 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Save, Mail, Bell, BarChart3, User } from 'lucide-react';
+import { Loader2, Save, Mail, Bell, BarChart3, User, CreditCard } from 'lucide-react';
 
 interface Preferences {
   defaultSenderName: string;
@@ -312,21 +313,78 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Account Info */}
+        {/* Subscription / Pricing */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              <CardTitle>Subscription</CardTitle>
+            </div>
+            <CardDescription>
+              Your current plan and billing information
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="border rounded-lg p-6 bg-gradient-to-br from-blue-50 to-indigo-50">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                    Current Plan
+                  </span>
+                  <h3 className="text-2xl font-bold mt-2">Free Tier</h3>
+                  <p className="text-muted-foreground">1,000 emails/month</p>
+                </div>
+                <p className="text-3xl font-bold">$0<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground mb-4">
+                <li className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  AI-powered email generation
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Campaign analytics
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Access to 100k+ Australian leads
+                </li>
+              </ul>
+              <Button variant="outline" className="w-full" disabled>
+                Upgrade Coming Soon
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Account / Profile */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              <CardTitle>Account</CardTitle>
+              <CardTitle>Account & Profile</CardTitle>
             </div>
             <CardDescription>
-              Your account information is managed through Clerk authentication
+              Manage your account settings, profile, and security
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              To update your profile, password, or manage your organization, please use the user menu in the sidebar.
-            </p>
+            <UserProfile
+              appearance={{
+                elements: {
+                  rootBox: 'w-full',
+                  card: 'shadow-none border-0',
+                  navbar: 'hidden',
+                  pageScrollBox: 'p-0',
+                },
+              }}
+            />
           </CardContent>
         </Card>
 

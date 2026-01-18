@@ -1,11 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useOrganization } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Calendar } from 'lucide-react';
 
 interface AnalyticsSummary {
   totalCampaigns: number;
@@ -39,36 +36,32 @@ interface Activity {
 }
 
 export default function AnalyticsPage() {
-  const { organization } = useOrganization();
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignAnalytics[]>([]);
   const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (organization) {
-      fetchAnalytics();
-    }
-  }, [organization, dateRange]);
+    fetchAnalytics();
+  }, []);
 
   const fetchAnalytics = async () => {
     try {
-      const params = new URLSearchParams();
-      params.append('organizationId', organization?.id || '');
-      if (dateRange.start) params.append('startDate', dateRange.start);
-      if (dateRange.end) params.append('endDate', dateRange.end);
+      setIsLoading(true);
+      setError(null);
 
-      const response = await fetch(`/api/analytics?${params.toString()}`);
+      const response = await fetch('/api/analytics');
       if (!response.ok) {
         throw new Error('Failed to fetch analytics');
       }
       const data = await response.json();
       setSummary(data.summary);
-      setCampaigns(data.campaigns);
-      setRecentActivity(data.recentActivity);
-    } catch (error) {
-      console.error('Error fetching analytics:', error);
+      setCampaigns(data.campaigns || []);
+      setRecentActivity(data.recentActivity || []);
+    } catch (err) {
+      console.error('Error fetching analytics:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load analytics');
     } finally {
       setIsLoading(false);
     }
@@ -114,10 +107,18 @@ export default function AnalyticsPage() {
     }
   };
 
-  if (!organization) {
+  if (error) {
     return (
       <div className="container mx-auto py-8 px-4 max-w-7xl">
-        <p className="text-center text-gray-600">Please select an organization to view analytics.</p>
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={fetchAnalytics}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
