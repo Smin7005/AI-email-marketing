@@ -144,6 +144,7 @@ export const sendCampaignBatch = inngest.createFunction(
 
     // Fetch campaign details
     const campaign = await step.run('fetch-campaign', async () => {
+      console.log('[SendEmails] Fetching campaign:', campaignId, 'for org:', organizationId);
       const { data, error } = await supabase
         .from('campaigns')
         .select('id, name, subject, sender_name, sender_email, status, sent_count, total_recipients')
@@ -156,6 +157,13 @@ export const sendCampaignBatch = inngest.createFunction(
         throw new Error(`Campaign not found or not ready: ${error?.message || 'Unknown'}`);
       }
 
+      console.log('[SendEmails] Campaign found:', {
+        id: data.id,
+        name: data.name,
+        sender_name: data.sender_name,
+        sender_email: data.sender_email,
+        status: data.status,
+      });
       return data;
     });
 
@@ -261,10 +269,20 @@ export const sendCampaignBatch = inngest.createFunction(
 
     // Send emails with rate limiting
     const results = await step.run('send-emails', async () => {
+      console.log('[SendEmails] Starting to send', emails.length, 'emails');
+      console.log('[SendEmails] Sender info:', {
+        sender_name: campaign.sender_name,
+        sender_email: campaign.sender_email,
+        from: `${campaign.sender_name} <${campaign.sender_email}>`,
+      });
+
       const sendResults = await Promise.allSettled(
         emails.map(async (email) => {
+          console.log('[SendEmails] Processing email for:', email.businessEmail);
+
           // Check if suppressed
           if (email.businessEmail && suppressed.has(email.businessEmail.toLowerCase())) {
+            console.log('[SendEmails] Email suppressed:', email.businessEmail);
             return {
               itemId: email.itemId,
               status: 'suppressed' as const,
@@ -285,8 +303,11 @@ export const sendCampaignBatch = inngest.createFunction(
             );
 
             // Send via Resend
+            const fromAddress = `${campaign.sender_name || 'Campaign'} <${campaign.sender_email || 'onboarding@resend.dev'}>`;
+            console.log('[SendEmails] Sending email with from:', fromAddress, 'to:', email.businessEmail);
+
             const result = await emailService.sendEmail({
-              from: `${campaign.sender_name} <${campaign.sender_email}>`,
+              from: fromAddress,
               to: email.businessEmail!,
               subject: email.emailSubject || 'No Subject',
               html: emailContent,
@@ -295,6 +316,8 @@ export const sendCampaignBatch = inngest.createFunction(
                 { name: 'organization', value: organizationId },
               ],
             });
+
+            console.log('[SendEmails] Email result:', result);
 
             if (result.error) {
               throw new Error(result.error);
@@ -307,7 +330,7 @@ export const sendCampaignBatch = inngest.createFunction(
               error: null,
             };
           } catch (error) {
-            console.error(`Failed to send email to ${email.businessEmail}:`, error);
+            console.error(`[SendEmails] Failed to send email to ${email.businessEmail}:`, error);
             return {
               itemId: email.itemId,
               status: 'failed' as const,

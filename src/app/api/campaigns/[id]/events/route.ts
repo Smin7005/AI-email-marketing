@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { emailEvents } from '@/lib/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { getCompanyDbClient } from '@/lib/db/supabase';
 
 export async function GET(
   request: NextRequest,
@@ -17,51 +15,55 @@ export async function GET(
       );
     }
 
+    const supabase = getCompanyDbClient();
+
     // Fetch all email events for this campaign
-    const events = await db
-      .select({
-        id: emailEvents.id,
-        eventType: emailEvents.eventType,
-        eventData: emailEvents.eventData,
-        occurredAt: emailEvents.occurredAt,
-        campaignItemId: emailEvents.campaignItemId,
-      })
-      .from(emailEvents)
-      .where(eq(emailEvents.campaignId, parseInt(campaignId)))
-      .orderBy(desc(emailEvents.occurredAt))
-      .limit(100); // Limit to 100 most recent events
+    const { data: events, error } = await supabase
+      .from('email_events')
+      .select('id, event_type, event_data, occurred_at, campaign_item_id')
+      .eq('campaign_id', parseInt(campaignId))
+      .order('occurred_at', { ascending: false })
+      .limit(100);
+
+    if (error) {
+      console.error('Error fetching campaign events:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch campaign events' },
+        { status: 500 }
+      );
+    }
 
     // Format events for display
-    const formattedEvents = events.map((event) => {
-      const eventData = event.eventData as any;
+    const formattedEvents = (events || []).map((event) => {
+      const eventData = event.event_data as any;
       let description = '';
 
-      switch (event.eventType) {
+      switch (event.event_type) {
         case 'delivered':
-          description = `Email delivered to ${eventData.recipient || 'recipient'}`;
+          description = `Email delivered to ${eventData?.recipient || 'recipient'}`;
           break;
         case 'opened':
-          description = `Email opened by ${eventData.recipient || 'recipient'}`;
+          description = `Email opened by ${eventData?.recipient || 'recipient'}`;
           break;
         case 'clicked':
-          description = `Link clicked in email by ${eventData.recipient || 'recipient'}`;
+          description = `Link clicked in email by ${eventData?.recipient || 'recipient'}`;
           break;
         case 'bounced':
-          description = `Email bounced - ${eventData.bounceType || 'bounce'}`;
+          description = `Email bounced - ${eventData?.bounceType || 'bounce'}`;
           break;
         case 'complained':
-          description = `Spam complaint from ${eventData.recipient || 'recipient'}`;
+          description = `Spam complaint from ${eventData?.recipient || 'recipient'}`;
           break;
         default:
-          description = `Email ${event.eventType}`;
+          description = `Email ${event.event_type}`;
       }
 
       return {
         id: event.id,
-        type: event.eventType,
+        type: event.event_type,
         description,
-        occurredAt: event.occurredAt,
-        campaignItemId: event.campaignItemId,
+        occurredAt: event.occurred_at,
+        campaignItemId: event.campaign_item_id,
       };
     });
 

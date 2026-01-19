@@ -1,9 +1,4 @@
-import { db } from '../db';
-import { organizationQuotas, emailEvents } from '../db/schema';
-import { eq, count, and, sql, gte, desc } from 'drizzle-orm';
-import { withOrganization } from '../db/tenant';
-
-const OQ = organizationQuotas;
+import { getCompanyDbClient } from '../db/supabase';
 
 export interface QuotaInfo {
   monthlyQuota: number;
@@ -34,44 +29,72 @@ export class QuotaService {
    * @returns Quota information
    */
   async getQuotaInfo(organizationId: string): Promise<QuotaInfo> {
-    // Get or create quota record
-    let quota = await db
-      .select()
-      .from(OQ)
-      .where(withOrganization(organizationId))
-      .limit(1);
+    const supabase = getCompanyDbClient();
 
-    if (!quota[0]) {
+    // Get quota record
+    let { data: quota, error } = await supabase
+      .from('organization_quotas')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .single();
+
+    if (error || !quota) {
       // Create default quota
-      [quota[0]] = await db
-        .insert(OQ)
-        .values({
-          organizationId,
+      const nextResetDate = this.getNextResetDate();
+
+      const { data: newQuota, error: createError } = await supabase
+        .from('organization_quotas')
+        .insert({
+          organization_id: organizationId,
+          monthly_quota: this.DEFAULT_MONTHLY_QUOTA,
+          monthly_used: 0,
+          monthly_reset: nextResetDate.toISOString(),
+        })
+        .select()
+        .single();
+
+      if (createError || !newQuota) {
+        console.error('Failed to create quota record:', createError);
+        // Return default values if we can't create
+        return {
           monthlyQuota: this.DEFAULT_MONTHLY_QUOTA,
           monthlyUsed: 0,
-          monthlyReset: this.getNextResetDate(),
-        })
-        .returning();
+          emailsRemaining: this.DEFAULT_MONTHLY_QUOTA,
+          quotaPercentage: 0,
+          monthlyReset: nextResetDate,
+          isOverQuota: false,
+          warningThreshold: this.WARNING_THRESHOLD,
+        };
+      }
+      quota = newQuota;
     }
 
     // Check if we need to reset the monthly counter
     const now = new Date();
-    const resetDate = new Date(quota[0].monthlyReset);
+    const resetDate = new Date(quota.monthly_reset);
 
     if (now >= resetDate) {
       // Reset the counter
-      [quota[0]] = await db
-        .update(OQ)
-        .set({
-          monthlyUsed: 0,
-          monthlyReset: this.getNextResetDate(),
+      const nextResetDate = this.getNextResetDate();
+
+      const { data: updatedQuota } = await supabase
+        .from('organization_quotas')
+        .update({
+          monthly_used: 0,
+          monthly_reset: nextResetDate.toISOString(),
+          updated_at: new Date().toISOString(),
         })
-        .where(eq(OQ.id, quota[0].id))
-        .returning();
+        .eq('id', quota.id)
+        .select()
+        .single();
+
+      if (updatedQuota) {
+        quota = updatedQuota;
+      }
     }
 
-    const monthlyQuota = quota[0].monthlyQuota;
-    const monthlyUsed = quota[0].monthlyUsed;
+    const monthlyQuota = quota.monthly_quota;
+    const monthlyUsed = quota.monthly_used;
     const emailsRemaining = Math.max(0, monthlyQuota - monthlyUsed);
     const quotaPercentage = monthlyQuota > 0 ? (monthlyUsed / monthlyQuota) : 0;
 
@@ -80,7 +103,7 @@ export class QuotaService {
       monthlyUsed,
       emailsRemaining,
       quotaPercentage,
-      monthlyReset: new Date(quota[0].monthlyReset),
+      monthlyReset: new Date(quota.monthly_reset),
       isOverQuota: monthlyUsed >= monthlyQuota,
       warningThreshold: this.WARNING_THRESHOLD,
     };
@@ -131,23 +154,25 @@ export class QuotaService {
    * @param count Number of emails sent
    */
   async incrementEmailCount(organizationId: string, count: number) {
-    const quota = await db
-      .select()
-      .from(OQ)
-      .where(withOrganization(organizationId))
-      .limit(1);
+    const supabase = getCompanyDbClient();
 
-    if (!quota[0]) {
+    const { data: quota } = await supabase
+      .from('organization_quotas')
+      .select('id, monthly_used')
+      .eq('organization_id', organizationId)
+      .single();
+
+    if (!quota) {
       throw new Error('Quota record not found');
     }
 
-    await db
-      .update(OQ)
-      .set({
-        monthlyUsed: sql`${OQ.monthlyUsed} + ${count}`,
-        updatedAt: new Date(),
+    await supabase
+      .from('organization_quotas')
+      .update({
+        monthly_used: quota.monthly_used + count,
+        updated_at: new Date().toISOString(),
       })
-      .where(eq(OQ.id, quota[0].id));
+      .eq('id', quota.id);
   }
 
   /**
@@ -156,13 +181,15 @@ export class QuotaService {
    * @param newQuota New monthly quota
    */
   async updateMonthlyQuota(organizationId: string, newQuota: number) {
-    await db
-      .update(OQ)
-      .set({
-        monthlyQuota: newQuota,
-        updatedAt: new Date(),
+    const supabase = getCompanyDbClient();
+
+    await supabase
+      .from('organization_quotas')
+      .update({
+        monthly_quota: newQuota,
+        updated_at: new Date().toISOString(),
       })
-      .where(withOrganization(organizationId));
+      .eq('organization_id', organizationId);
   }
 
   /**
@@ -171,34 +198,29 @@ export class QuotaService {
    * @returns Array of organizations near quota
    */
   async getOrganizationsNearQuota(threshold = this.WARNING_THRESHOLD) {
+    const supabase = getCompanyDbClient();
     const now = new Date();
 
-    const results = await db
-      .select({
-        organizationId: OQ.organizationId,
-        monthlyQuota: OQ.monthlyQuota,
-        monthlyUsed: OQ.monthlyUsed,
-        quotaPercentage: sql<number>`(
-          ${OQ.monthlyUsed}::float /
-          NULLIF(${OQ.monthlyQuota}, 0)::float
-        ) * 100`,
-      })
-      .from(OQ)
-      .where(
-        and(
-          sql`${OQ.monthlyReset} > ${now}`,
-          sql`(
-            ${OQ.monthlyUsed}::float /
-            NULLIF(${OQ.monthlyQuota}, 0)::float
-          ) >= ${threshold}`
-        )
-      )
-      .orderBy(desc(sql`(
-        ${OQ.monthlyUsed}::float /
-        NULLIF(${OQ.monthlyQuota}, 0)::float
-      )`));
+    const { data: results, error } = await supabase
+      .from('organization_quotas')
+      .select('organization_id, monthly_quota, monthly_used')
+      .gt('monthly_reset', now.toISOString());
 
-    return results;
+    if (error || !results) {
+      console.error('Failed to get organizations near quota:', error);
+      return [];
+    }
+
+    // Filter and calculate percentage in code
+    return results
+      .map(r => ({
+        organizationId: r.organization_id,
+        monthlyQuota: r.monthly_quota,
+        monthlyUsed: r.monthly_used,
+        quotaPercentage: r.monthly_quota > 0 ? (r.monthly_used / r.monthly_quota) * 100 : 0,
+      }))
+      .filter(r => r.quotaPercentage >= threshold * 100)
+      .sort((a, b) => b.quotaPercentage - a.quotaPercentage);
   }
 
   /**
@@ -208,19 +230,18 @@ export class QuotaService {
    */
   async shouldSendQuotaWarning(organizationId: string): Promise<boolean> {
     const quotaInfo = await this.getQuotaInfo(organizationId);
+    const supabase = getCompanyDbClient();
 
     // Only warn once when crossing threshold
     if (quotaInfo.quotaPercentage >= this.WARNING_THRESHOLD && !quotaInfo.isOverQuota) {
       // Check if we've already warned this month
-      const quota = await db
-        .select({
-          updatedAt: OQ.updatedAt,
-        })
-        .from(OQ)
-        .where(withOrganization(organizationId))
-        .limit(1);
+      const { data: quota } = await supabase
+        .from('organization_quotas')
+        .select('updated_at')
+        .eq('organization_id', organizationId)
+        .single();
 
-      const lastWarning = quota[0]?.updatedAt;
+      const lastWarning = quota?.updated_at;
       const now = new Date();
 
       // Don't warn more than once per month
@@ -237,17 +258,28 @@ export class QuotaService {
    * Called by a scheduled job on the 1st of each month
    */
   async resetMonthlyQuotas() {
+    const supabase = getCompanyDbClient();
     const now = new Date();
     const nextResetDate = this.getNextResetDate();
 
-    await db
-      .update(OQ)
-      .set({
-        monthlyUsed: 0,
-        monthlyReset: nextResetDate,
-        updatedAt: now,
-      })
-      .where(sql`${OQ.monthlyReset} <= ${now}`);
+    // Get all quotas that need resetting
+    const { data: quotasToReset } = await supabase
+      .from('organization_quotas')
+      .select('id')
+      .lte('monthly_reset', now.toISOString());
+
+    if (quotasToReset && quotasToReset.length > 0) {
+      const ids = quotasToReset.map(q => q.id);
+
+      await supabase
+        .from('organization_quotas')
+        .update({
+          monthly_used: 0,
+          monthly_reset: nextResetDate.toISOString(),
+          updated_at: now.toISOString(),
+        })
+        .in('id', ids);
+    }
   }
 
   /**

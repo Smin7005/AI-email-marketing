@@ -30,7 +30,7 @@ interface CollectionItem {
   id: string;
   collection_id: string;
   listing_id: string;
-  created_at: string;
+  added_at: string;
   companyinfo: Company;
 }
 

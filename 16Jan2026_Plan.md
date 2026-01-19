@@ -1,10 +1,13 @@
+# responsive designing
+
+
 # Leads
 
-## 1. Decrease the selection button from 2 columns to 1 column.H
+## 1. ✅ Decrease the selection button from 2 columns to 1 column. H
 
-## 2. Seperate 'Contact' column into 2 column: 'Phone_Number' and 'Email'.H
+## 2. ✅ Seperate 'Contact' column into 2 column: 'Phone_Number' and 'Email'. H
 
-## 3. Discard the inner scrollbar, only use browser scrollbar.H
+## 3. ✅ Discard the inner scrollbar, only use browser scrollbar. H
 
 ## 4. Name search improvement:L
 
@@ -18,14 +21,16 @@
 
 - User clicks "Save" → Opens modal → User selects/creates a collection → Lead is added, it should be merged to table filter, column should just output the collection name which lead belongs to.
 
-## 7. Database column analysis:
+## 7 Research how to display multi-column table vertically M
+
+## 8. Database column analysis:
 
 | Group                  | Column Name         | Function / Purpose                                                                   |
 | ---------------------- | ------------------- | ------------------------------------------------------------------------------------ |
-| 1. 0Identification     | record_id           | Internal unique identifier for the database record (primary key).                    |
-| 1. 0Identification     | listing_id          | Platform-wide or external identifier used across systems and APIs.                   |
-| 1. 0Identification     | listing_type        | Defines the type of listing (e.g. Business, Service, Franchise).                     |
-| 2. 1Business Identity1 | 1company_name       | Registered or trading name of the business.                                          |
+| 1. Identification     | 0record_id           | Internal unique identifier for the database record (primary key).                    |
+| 1. Identification     | 0listing_id          | Platform-wide or external identifier used across systems and APIs.                   |
+| 1. Identification     | 0listing_type        | Defines the type of listing (e.g. Business, Service, Franchise).                     |
+| 2. Business Identity | 1company_name       | Registered or trading name of the business.                                          |
 | 2. Business Identity   | 2date_established   | Year the business was founded; used for credibility and experience filters.          |
 | 2. Business Identity   | 2employees_count    | Approximate size of the business (used for trust signals and filtering).             |
 | 3. Contact Info        | 1phone_number       | Primary customer contact phone number.                                               |
@@ -49,9 +54,13 @@
 | 8. Marketing           | 2keywords_list      | SEO and search indexing keywords to improve discoverability.                         |
 | 9. Data Management     | 0last_updated       | Timestamp of the most recent update to the record.                                   |
 
+## ✅ 9. Select leads from different pages: refer to react: redux, not save if jump to other pages (collections, compaigns, etc.). H
+
+## 10. Add a drop box to adjust the number of rows in each page of the list. L
+
 # Collections
 
-## 1. Fail to load leads in collection: H
+## ✅ 1. Fail to load leads in collection: H
 
 - Data is stored to collections and collection_items successfully.
 - Error fetching collection items: {
@@ -65,9 +74,11 @@
 
 - it should allow users to modify collection name, and add or delete leads in this collection.
 
+## 3. Refine collection list display layout M
+
 # Campaigns
 
-## 1. Duplicated 'Create new campaign' button. H
+## ✅ 1. Duplicated 'Create new campaign' button. H
 
 ## 2. Failed to create campaigns: H
 
@@ -104,3 +115,10 @@
   \_errors: []
   }
   }
+
+
+## Email Generation Error:
+Starting email generation for campaign 2
+DrizzleQueryError: Failed query: select "id", "organization_id", "name", "subject", "sender_name", "sender_email", "service_description", "tone", "status", "total_recipients", "sent_count", "generated_count", "failed_count", "target_list_id", "created_at", "updated_at" from "campaigns" where ("campaigns"."id" = $1 and "campaigns"."organization_id" = $2) limit $3
+params: 2,org_38HGXMk1WUEWxO4aQHf4cBQoROO
+

@@ -14,7 +14,7 @@ interface CollectionItem {
   id: string;
   collection_id: string;
   listing_id: string;
-  created_at: string;
+  added_at: string;
   companyinfo: {
     listing_id: string;
     company_name: string;
@@ -50,7 +50,7 @@ async function getCollectionItems(id: string): Promise<CollectionItem[]> {
   const supabase = getCompanyDbClient();
   const { data: collectionItems, error } = await supabase
     .from('collection_items')
-    .select('id, collection_id, listing_id, created_at')
+    .select('id, collection_id, listing_id, added_at')
     .eq('collection_id', id);
 
   if (error) {
@@ -84,7 +84,7 @@ async function getCollectionItems(id: string): Promise<CollectionItem[]> {
       id: collectionItem.id?.toString(),
       collection_id: collectionItem.collection_id?.toString(),
       listing_id: collectionItem.listing_id?.toString(),
-      created_at: collectionItem.created_at,
+      added_at: collectionItem.added_at,
       companyinfo: companyInfo || {
         listing_id: collectionItem.listing_id?.toString(),
         company_name: 'Unknown',

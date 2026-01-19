@@ -145,7 +145,10 @@ export default function CampaignDetailPage() {
   };
 
   const handleSendCampaign = () => {
+    console.log('[DEBUG] handleSendCampaign CALLED!');
+    console.log('[DEBUG] showSendConfirmation before:', showSendConfirmation);
     setShowSendConfirmation(true);
+    console.log('[DEBUG] setShowSendConfirmation(true) executed');
   };
 
   const confirmSendCampaign = () => {
@@ -255,6 +258,13 @@ export default function CampaignDetailPage() {
         Back
       </Button>
 
+      {/* DEBUG INFO - Remove after testing */}
+      <div className="bg-yellow-100 border border-yellow-400 p-2 mb-4 text-sm">
+        <strong>DEBUG:</strong> Campaign Status: <code>{campaign.status}</code> |
+        isSendingCampaign: <code>{String(isSendingCampaign)}</code> |
+        showSendConfirmation: <code>{String(showSendConfirmation)}</code>
+      </div>
+
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -277,9 +287,15 @@ export default function CampaignDetailPage() {
           )}
           {campaign.status === 'ready' && (
             <Button
-              onClick={handleSendCampaign}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[DEBUG] Button clicked!');
+                handleSendCampaign();
+              }}
               disabled={isSendingCampaign}
               className="bg-green-600 hover:bg-green-700"
+              type="button"
             >
               <Send className="w-4 h-4 mr-2" />
               Review & Send Campaign
@@ -505,22 +521,24 @@ export default function CampaignDetailPage() {
               <AlertTriangle className="w-5 h-5 text-yellow-500" />
               Confirm Campaign Send
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <p>
-                You are about to send <strong>{campaign?.name}</strong> to{' '}
-                <strong>{campaign?.totalRecipients} recipients</strong>.
-              </p>
-              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm">
-                <p className="font-medium text-yellow-800">Before sending, please verify:</p>
-                <ul className="list-disc list-inside mt-2 text-yellow-700 space-y-1">
-                  <li>All email content has been reviewed</li>
-                  <li>Recipient list is correct</li>
-                  <li>Sender email is properly configured</li>
-                </ul>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  You are about to send <strong>{campaign?.name}</strong> to{' '}
+                  <strong>{campaign?.totalRecipients} recipients</strong>.
+                </p>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm">
+                  <p className="font-medium text-yellow-800">Before sending, please verify:</p>
+                  <ul className="list-disc list-inside mt-2 text-yellow-700 space-y-1">
+                    <li>All email content has been reviewed</li>
+                    <li>Recipient list is correct</li>
+                    <li>Sender email is properly configured</li>
+                  </ul>
+                </div>
+                <p className="text-sm text-gray-500">
+                  This action cannot be undone. Emails will be sent immediately.
+                </p>
               </div>
-              <p className="text-sm text-gray-500">
-                This action cannot be undone. Emails will be sent immediately.
-              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

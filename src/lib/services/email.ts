@@ -1,6 +1,19 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization to ensure env vars are loaded
+let resendClient: Resend | null = null;
+
+function getResendClient(): Resend {
+  if (!resendClient) {
+    const apiKey = process.env.RESEND_API_KEY;
+    console.log('[EmailService] Initializing Resend client, API key exists:', !!apiKey);
+    if (!apiKey) {
+      console.error('[EmailService] RESEND_API_KEY is not set!');
+    }
+    resendClient = new Resend(apiKey);
+  }
+  return resendClient;
+}
 
 export interface EmailOptions {
   from: string;
@@ -26,7 +39,14 @@ export class EmailService {
    * @returns Email result
    */
   async sendEmail(options: EmailOptions): Promise<EmailResult> {
+    console.log('[EmailService] sendEmail called with:', {
+      from: options.from,
+      to: options.to,
+      subject: options.subject,
+    });
+
     try {
+      const resend = getResendClient();
       const { data, error } = await resend.emails.send({
         from: options.from,
         to: options.to,
@@ -39,17 +59,20 @@ export class EmailService {
       });
 
       if (error) {
+        console.error('[EmailService] Resend API error:', error);
         return {
           id: '',
           error: error.message,
         };
       }
 
+      console.log('[EmailService] Email sent successfully, id:', data?.id);
       return {
         id: data?.id || '',
         messageId: data?.id,
       };
     } catch (error) {
+      console.error('[EmailService] Exception while sending email:', error);
       return {
         id: '',
         error: error instanceof Error ? error.message : 'Unknown error',

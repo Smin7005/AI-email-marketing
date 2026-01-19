@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import {
   ColDef,
@@ -11,6 +11,13 @@ import {
 } from 'ag-grid-community';
 import { Mail, Phone } from 'lucide-react';
 import AddToCollectionModal from './AddToCollectionModal';
+import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+import {
+  addSelectedLead,
+  removeSelectedLead,
+  clearSelectedLeads,
+} from '@/lib/store/leadsSlice';
+import { useState } from 'react';
 
 // Register all AG Grid Community modules
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -33,27 +40,21 @@ interface LeadsTableProps {
 
 export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProps) {
   const gridApiRef = useRef<GridApi | null>(null);
-  const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Column definitions
+  // Redux state
+  const dispatch = useAppDispatch();
+  const selectedLeads = useAppSelector((state) => state.leads.selectedLeads);
+  const selectedCompanyIds = selectedLeads.map(lead => lead.id);
+
+  // Column definitions - removed inner checkbox column and Actions column
   const columnDefs: ColDef[] = [
-    {
-      headerName: '',
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
-      width: 50,
-      pinned: 'left',
-      lockPosition: true,
-      suppressMovable: true,
-      rowDrag: false,
-    },
     {
       headerName: 'Business',
       field: 'company_name',
       filter: true,
       sortable: true,
-      width: 250,
+      width: 200,
       cellRenderer: (params: any) => {
         return (
           <div className="flex items-center py-2">
@@ -67,77 +68,101 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
       field: 'category_name',
       filter: true,
       sortable: true,
-      width: 200,
+      width: 150,
       cellRenderer: (params: any) => {
         return <div className="text-sm text-gray-900">{params.value || '-'}</div>;
       },
     },
     {
-      headerName: 'Contact',
-      width: 250,
+      headerName: 'Phone_Number',
+      field: 'phone_number',
+      filter: true,
+      sortable: true,
+      width: 140,
       cellRenderer: (params: any) => {
         const data = params.data;
         return (
-          <div className="space-y-1 py-2">
-            {data.email && (
-              <div className="flex items-center text-sm text-gray-600">
-                <Mail className="h-3 w-3 mr-1 text-gray-400" />
-                <a
-                  href={`mailto:${data.email}`}
-                  className="hover:text-blue-600 truncate max-w-[200px] block"
-                >
-                  {data.email}
-                </a>
-              </div>
-            )}
-            {data.phone_number && (
+          <div className="py-2">
+            {data.phone_number ? (
               <div className="flex items-center text-sm text-gray-600">
                 <Phone className="h-3 w-3 mr-1 text-gray-400" />
                 <a href={`tel:${data.phone_number}`} className="hover:text-blue-600">
                   {data.phone_number}
                 </a>
               </div>
-            )}
-            {!data.email && !data.phone_number && (
-              <div className="text-sm text-gray-400">No contact info</div>
+            ) : (
+              <div className="text-sm text-gray-400">-</div>
             )}
           </div>
         );
       },
     },
     {
-      headerName: 'Address',
-      width: 300,
+      headerName: 'Email',
+      field: 'email',
+      filter: true,
+      sortable: true,
+      width: 200,
       cellRenderer: (params: any) => {
         const data = params.data;
-        const addressParts = [
-          data.address_suburb,
-          data.address_state,
-          data.address_postcode
-        ].filter(Boolean);
-        const fullAddress = addressParts.join(', ');
         return (
-          <div className="text-sm text-gray-600 truncate py-2 max-w-[280px]">
-            {fullAddress || '-'}
+          <div className="py-2">
+            {data.email ? (
+              <div className="flex items-center text-sm text-gray-600">
+                <Mail className="h-3 w-3 mr-1 text-gray-400" />
+                <a
+                  href={`mailto:${data.email}`}
+                  className="hover:text-blue-600 truncate max-w-[180px] block"
+                >
+                  {data.email}
+                </a>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-400">-</div>
+            )}
           </div>
         );
       },
     },
     {
-      headerName: 'Actions',
-      width: 100,
-      pinned: 'right',
+      headerName: 'Detail_Address',
+      field: 'address_suburb',
+      filter: true,
+      sortable: true,
+      width: 150,
       cellRenderer: (params: any) => {
         return (
-          <button
-            onClick={() => {
-              setSelectedCompanyIds([params.data.listing_id]);
-              setIsModalOpen(true);
-            }}
-            className="text-blue-600 hover:text-blue-900 font-medium text-sm"
-          >
-            Save
-          </button>
+          <div className="text-sm text-gray-600 truncate py-2">
+            {params.value || '-'}
+          </div>
+        );
+      },
+    },
+    {
+      headerName: 'State_Abbreviation',
+      field: 'address_state',
+      filter: true,
+      sortable: true,
+      width: 80,
+      cellRenderer: (params: any) => {
+        return (
+          <div className="text-sm text-gray-600 py-2">
+            {params.value || '-'}
+          </div>
+        );
+      },
+    },
+    {
+      headerName: 'Postcode',
+      field: 'address_postcode',
+      filter: true,
+      sortable: true,
+      width: 90,
+      cellRenderer: (params: any) => {
+        return (
+          <div className="text-sm text-gray-600 py-2">
+            {params.value || '-'}
+          </div>
         );
       },
     },
@@ -145,21 +170,65 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
 
   const onGridReady = useCallback((params: GridReadyEvent) => {
     gridApiRef.current = params.api;
-  }, []);
+
+    // Restore selection state from Redux when grid is ready
+    setTimeout(() => {
+      if (gridApiRef.current) {
+        gridApiRef.current.forEachNode((node) => {
+          if (selectedCompanyIds.includes(node.data.listing_id)) {
+            node.setSelected(true);
+          }
+        });
+      }
+    }, 0);
+  }, [selectedCompanyIds]);
+
+  // Sync grid selection when leads data changes (pagination)
+  useEffect(() => {
+    if (gridApiRef.current) {
+      gridApiRef.current.forEachNode((node) => {
+        const isSelected = selectedCompanyIds.includes(node.data.listing_id);
+        if (node.isSelected() !== isSelected) {
+          node.setSelected(isSelected);
+        }
+      });
+    }
+  }, [leads, selectedCompanyIds]);
 
   const onSelectionChanged = useCallback(() => {
     if (gridApiRef.current) {
-      const selectedRows = gridApiRef.current.getSelectedRows();
-      setSelectedCompanyIds(selectedRows.map((row: Company) => row.listing_id));
-    }
-  }, []);
+      const selectedRows = gridApiRef.current.getSelectedRows() as Company[];
+      const currentPageIds = leads.map(lead => lead.listing_id);
 
-  const selectedCompanies = leads
-    .filter((lead) => selectedCompanyIds.includes(lead.listing_id))
-    .map((lead) => ({ id: lead.listing_id, name: lead.company_name }));
+      // Get IDs of rows selected on current page
+      const newSelectedIds = selectedRows.map(row => row.listing_id);
+
+      // For each lead on the current page, update Redux state
+      currentPageIds.forEach(id => {
+        const lead = leads.find(l => l.listing_id === id);
+        if (!lead) return;
+
+        const isNowSelected = newSelectedIds.includes(id);
+        const wasSelected = selectedCompanyIds.includes(id);
+
+        if (isNowSelected && !wasSelected) {
+          dispatch(addSelectedLead({ id: lead.listing_id, name: lead.company_name }));
+        } else if (!isNowSelected && wasSelected) {
+          dispatch(removeSelectedLead(id));
+        }
+      });
+    }
+  }, [dispatch, leads, selectedCompanyIds]);
 
   const handleSaveSuccess = () => {
-    setSelectedCompanyIds([]);
+    dispatch(clearSelectedLeads());
+    if (gridApiRef.current) {
+      gridApiRef.current.deselectAll();
+    }
+  };
+
+  const handleCancelSelection = () => {
+    dispatch(clearSelectedLeads());
     if (gridApiRef.current) {
       gridApiRef.current.deselectAll();
     }
@@ -175,11 +244,11 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
   return (
     <>
       {/* Floating Action Bar */}
-      {selectedCompanyIds.length > 0 && (
+      {selectedLeads.length > 0 && (
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
           <div className="bg-blue-600 text-white rounded-lg shadow-lg px-6 py-3 flex items-center gap-4">
             <span className="font-medium">
-              {selectedCompanyIds.length} selected
+              {selectedLeads.length} selected
             </span>
             <button
               onClick={() => setIsModalOpen(true)}
@@ -188,12 +257,7 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
               Save to Collection
             </button>
             <button
-              onClick={() => {
-                setSelectedCompanyIds([]);
-                if (gridApiRef.current) {
-                  gridApiRef.current.deselectAll();
-                }
-              }}
+              onClick={handleCancelSelection}
               className="text-blue-100 hover:text-white"
             >
               Cancel
@@ -203,7 +267,7 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
       )}
 
       {/* AG Grid */}
-      <div className="ag-theme-quartz h-[600px] w-full" style={{ height: '600px', width: '100%' }}>
+      <div className="ag-theme-quartz w-full">
         <AgGridReact
           rowData={leads}
           columnDefs={columnDefs}
@@ -222,6 +286,8 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
           enableCellTextSelection={true}
           ensureDomOrder={true}
           loading={false}
+          domLayout="autoHeight"
+          getRowId={(params) => params.data.listing_id}
         />
       </div>
 
@@ -246,7 +312,7 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         selectedCompanyIds={selectedCompanyIds}
-        selectedCompanies={selectedCompanies}
+        selectedCompanies={selectedLeads.map(lead => ({ id: lead.id, name: lead.name }))}
         onSuccess={handleSaveSuccess}
       />
     </>

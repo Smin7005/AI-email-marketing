@@ -112,15 +112,9 @@ export default function CampaignsPage() {
         <Card>
           <CardContent className="pt-6 py-12">
             <div className="text-center">
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600">
                 No campaigns yet. Create your first campaign to get started.
               </p>
-              <Button asChild>
-                <Link href="/campaigns/create">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create New Campaign
-                </Link>
-              </Button>
             </div>
           </CardContent>
         </Card>

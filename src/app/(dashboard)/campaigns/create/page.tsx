@@ -143,8 +143,9 @@ export default function CreateCampaignPage() {
           requestBody.manualName = manualName.trim();
         }
       } else {
-        requestBody.businessIds = selectedBusinessIds;
-        requestBody.collectionId = selectedCollectionId;
+        // Convert string IDs to numbers for API validation
+        requestBody.businessIds = selectedBusinessIds.map((id: string) => parseInt(id, 10));
+        requestBody.collectionId = parseInt(selectedCollectionId, 10);
       }
 
       const response = await fetch('/api/campaigns', {
