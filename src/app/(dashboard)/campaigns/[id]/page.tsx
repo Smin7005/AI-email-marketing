@@ -68,6 +68,14 @@ export default function CampaignDetailPage() {
       }
       return response.json();
     },
+    // Auto-refresh every 3 seconds while generating or sending
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      if (status === 'generating' || status === 'sending') {
+        return 3000;
+      }
+      return false;
+    },
   });
 
   const {
@@ -257,13 +265,6 @@ export default function CampaignDetailPage() {
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back
       </Button>
-
-      {/* DEBUG INFO - Remove after testing */}
-      <div className="bg-yellow-100 border border-yellow-400 p-2 mb-4 text-sm">
-        <strong>DEBUG:</strong> Campaign Status: <code>{campaign.status}</code> |
-        isSendingCampaign: <code>{String(isSendingCampaign)}</code> |
-        showSendConfirmation: <code>{String(showSendConfirmation)}</code>
-      </div>
 
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">

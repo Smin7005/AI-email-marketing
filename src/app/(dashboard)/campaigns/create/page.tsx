@@ -92,9 +92,6 @@ export default function CreateCampaignPage() {
 
       setSelectedBusinessIds(data.ids || []);
       setSelectedBusinessNames(data.names || []);
-
-      // Show success message
-      alert(`Loaded ${data.ids?.length || 0} businesses from "${collection.name}"`);
     } catch (error) {
       console.error('Error loading collection items:', error);
       alert('Failed to load businesses from collection. Please try again.');
@@ -374,7 +371,7 @@ export default function CreateCampaignPage() {
                   {selectedBusinessIds.length} business(es) selected
                 </p>
                 {selectedBusinessNames.length > 0 ? (
-                  <div className="max-h-64 overflow-y-auto space-y-1">
+                  <div className="space-y-1">
                     {selectedBusinessNames.map((name, index) => (
                       <p key={index} className="text-sm">
                         • {name}

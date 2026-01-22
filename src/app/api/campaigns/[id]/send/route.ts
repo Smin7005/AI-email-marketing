@@ -70,6 +70,10 @@ export async function POST(
     }
 
     // Trigger Inngest workflow for sending
+    console.log('[API /send] Triggering Inngest event campaign/send-batch:', {
+      campaignId,
+      organizationId: effectiveOrgId,
+    });
     await inngest.send({
       name: 'campaign/send-batch',
       data: {
@@ -77,6 +81,7 @@ export async function POST(
         organizationId: effectiveOrgId,
       },
     });
+    console.log('[API /send] Inngest event sent successfully');
 
     // Update campaign status to 'sending'
     await campaignService.updateCampaignStatus(

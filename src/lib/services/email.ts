@@ -47,6 +47,13 @@ export class EmailService {
 
     try {
       const resend = getResendClient();
+      console.log('[EmailService] Calling Resend API with:', {
+        from: options.from,
+        to: options.to,
+        subject: options.subject,
+        htmlLength: options.html?.length || 0,
+      });
+
       const { data, error } = await resend.emails.send({
         from: options.from,
         to: options.to,
@@ -58,8 +65,10 @@ export class EmailService {
         tags: options.tags,
       });
 
+      console.log('[EmailService] Resend API response:', { data, error });
+
       if (error) {
-        console.error('[EmailService] Resend API error:', error);
+        console.error('[EmailService] Resend API error:', error.message, error);
         return {
           id: '',
           error: error.message,

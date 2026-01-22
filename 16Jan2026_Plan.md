@@ -17,13 +17,13 @@
 
 - it should accept abbreviation and postcode searching.
 
-## 6. Actions column business logic:H
+## 6. ✅ Actions column business logic:H
 
 - User clicks "Save" → Opens modal → User selects/creates a collection → Lead is added, it should be merged to table filter, column should just output the collection name which lead belongs to.
 
 ## 7 Research how to display multi-column table vertically M
 
-## 8. Database column analysis:
+## 8.  ✅ Database column analysis:
 
 | Group                  | Column Name         | Function / Purpose                                                                   |
 | ---------------------- | ------------------- | ------------------------------------------------------------------------------------ |
@@ -80,7 +80,7 @@
 
 ## ✅ 1. Duplicated 'Create new campaign' button. H
 
-## 2. Failed to create campaigns: H
+## ✅ 2. Failed to create campaigns: H
 
 - 1. analyse error logs, check api code.
 - campaigns table is empty.
@@ -116,9 +116,24 @@
   }
   }
 
+## 3. Improve the layout: table component L
 
-## Email Generation Error:
-Starting email generation for campaign 2
-DrizzleQueryError: Failed query: select "id", "organization_id", "name", "subject", "sender_name", "sender_email", "service_description", "tone", "status", "total_recipients", "sent_count", "generated_count", "failed_count", "target_list_id", "created_at", "updated_at" from "campaigns" where ("campaigns"."id" = $1 and "campaigns"."organization_id" = $2) limit $3
-params: 2,org_38HGXMk1WUEWxO4aQHf4cBQoROO
+## 4. Replace API of generating eamil. H 3
 
+## 5. ✅ Delete inner side scrollbar, and set Scrollbar in create campaign to Google browser scrollbar. H1
+
+## 6. ✅ Delete the pop-up window after select Recipients. H 2
+
+## 7. ✅ Update structure of JSON file send to Resend, correct subject of email. H4
+
+## 8. ✅ Refresh the page after email is generated automatically. H3
+
+## 9. ✅ Email Generation Error: transfer argument [Your Name], [Your Company] making paragraph. H5
+
+## 10. Multiple select at Recipients involve both collections and individuals  (manually input email) H 4
+
+## 11. check the interval code snippet in src\app\(dashboard)\campaigns\[id]\page.tsx L
+
+## 12. Fix bug: signature Your Company is wrong, should match with input Campaign Name. H1
+
+## Push to Vercel server by MCP.  H2

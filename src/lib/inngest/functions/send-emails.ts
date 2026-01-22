@@ -140,6 +140,8 @@ export const sendCampaignBatch = inngest.createFunction(
   { event: 'campaign/send-batch' },
   async ({ event, step }) => {
     const { campaignId, organizationId } = event.data;
+    console.log('[SendEmails] ========== INNGEST FUNCTION TRIGGERED ==========');
+    console.log('[SendEmails] Event received:', { campaignId, organizationId });
     const supabase = getCompanyDbClient();
 
     // Fetch campaign details
@@ -168,26 +170,34 @@ export const sendCampaignBatch = inngest.createFunction(
     });
 
     // Check quota before sending
+    console.log('[SendEmails] Step: check-quota starting...');
     const quotaCheck = await step.run('check-quota', async () => {
-      return checkQuota(supabase, organizationId, 10);
+      const result = checkQuota(supabase, organizationId, 10);
+      console.log('[SendEmails] Quota check result:', result);
+      return result;
     });
 
+    console.log('[SendEmails] Quota check complete:', quotaCheck);
     if (!quotaCheck.allowed) {
       throw new Error(`Quota exceeded: ${quotaCheck.reason}`);
     }
 
     // Update campaign status to sending
+    console.log('[SendEmails] Step: update-campaign-status starting...');
     await step.run('update-campaign-status', async () => {
       await supabase
         .from('campaigns')
         .update({ status: 'sending', updated_at: new Date().toISOString() })
         .eq('id', campaignId)
         .eq('organization_id', organizationId);
+      console.log('[SendEmails] Campaign status updated to sending');
     });
 
     // Fetch next batch of emails to send (limit 10 for rate limiting)
+    console.log('[SendEmails] Step: fetch-emails-batch starting...');
     const emails = await step.run('fetch-emails-batch', async () => {
       // Get campaign items that are generated
+      console.log('[SendEmails] Querying campaign_items with status=generated for campaign:', campaignId);
       const { data: items, error: itemsError } = await supabase
         .from('campaign_items')
         .select('id, email_subject, email_content, business_id, metadata')
@@ -195,11 +205,14 @@ export const sendCampaignBatch = inngest.createFunction(
         .eq('status', 'generated')
         .limit(10);
 
+      console.log('[SendEmails] Query result:', { itemCount: items?.length || 0, error: itemsError });
+
       if (itemsError) {
         throw new Error(`Failed to fetch campaign items: ${itemsError.message}`);
       }
 
       if (!items || items.length === 0) {
+        console.log('[SendEmails] No items with status=generated found!');
         return [];
       }
 
@@ -222,7 +235,7 @@ export const sendCampaignBatch = inngest.createFunction(
       }
 
       // Map items with business details
-      return items.map(item => {
+      const mappedItems = items.map(item => {
         const business = item.business_id ? businessMap[item.business_id] : null;
         const metadata = item.metadata as { name?: string; email?: string } | null;
 
@@ -234,10 +247,48 @@ export const sendCampaignBatch = inngest.createFunction(
           businessName: business?.company_name || metadata?.name || 'Valued Customer',
           businessEmail: business?.email || metadata?.email,
         };
-      }).filter(item => item.businessEmail); // Only include items with email
+      });
+
+      // Log items without email addresses for debugging
+      const itemsWithoutEmail = mappedItems.filter(item => !item.businessEmail);
+      if (itemsWithoutEmail.length > 0) {
+        console.warn(`[SendEmails] WARNING: ${itemsWithoutEmail.length} items have no email address and will be skipped:`,
+          itemsWithoutEmail.map(i => ({ itemId: i.itemId, businessId: i.businessId, businessName: i.businessName }))
+        );
+      }
+
+      const itemsWithEmail = mappedItems.filter(item => item.businessEmail);
+      console.log(`[SendEmails] Found ${items.length} generated items, ${itemsWithEmail.length} have valid email addresses`);
+
+      return itemsWithEmail;
     });
 
     if (emails.length === 0) {
+      console.warn('[SendEmails] No emails to send - all items either have no email address or no generated content');
+
+      // Mark items without email as failed
+      await step.run('mark-no-email-items-failed', async () => {
+        const { data: noEmailItems } = await supabase
+          .from('campaign_items')
+          .select('id')
+          .eq('campaign_id', campaignId)
+          .eq('status', 'generated');
+
+        if (noEmailItems && noEmailItems.length > 0) {
+          console.log(`[SendEmails] Marking ${noEmailItems.length} items as failed due to missing email address`);
+          for (const item of noEmailItems) {
+            await supabase
+              .from('campaign_items')
+              .update({
+                status: 'failed',
+                error_message: 'No email address found for this business',
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', item.id);
+          }
+        }
+      });
+
       // Campaign complete
       await step.run('mark-campaign-sent', async () => {
         // Count how many were actually sent
@@ -263,13 +314,16 @@ export const sendCampaignBatch = inngest.createFunction(
 
     // Check suppression list
     const emailAddresses = emails.map(e => e.businessEmail).filter(Boolean) as string[];
-    const suppressed = await step.run('check-suppression', async () => {
-      return getSuppressedEmails(supabase, organizationId, emailAddresses);
+    const suppressedEmails = await step.run('check-suppression', async () => {
+      const suppressedSet = await getSuppressedEmails(supabase, organizationId, emailAddresses);
+      // Convert Set to Array for JSON serialization (Inngest memoizes step results as JSON)
+      return Array.from(suppressedSet);
     });
 
     // Send emails with rate limiting
     const results = await step.run('send-emails', async () => {
       console.log('[SendEmails] Starting to send', emails.length, 'emails');
+      console.log('[SendEmails] Suppressed emails list:', suppressedEmails);
       console.log('[SendEmails] Sender info:', {
         sender_name: campaign.sender_name,
         sender_email: campaign.sender_email,
@@ -280,8 +334,8 @@ export const sendCampaignBatch = inngest.createFunction(
         emails.map(async (email) => {
           console.log('[SendEmails] Processing email for:', email.businessEmail);
 
-          // Check if suppressed
-          if (email.businessEmail && suppressed.has(email.businessEmail.toLowerCase())) {
+          // Check if suppressed (using Array.includes instead of Set.has)
+          if (email.businessEmail && suppressedEmails.includes(email.businessEmail.toLowerCase())) {
             console.log('[SendEmails] Email suppressed:', email.businessEmail);
             return {
               itemId: email.itemId,

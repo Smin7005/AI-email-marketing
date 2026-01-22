@@ -146,11 +146,15 @@ export const generateEmails = inngest.createFunction(
 
         console.log(`Generating email for ${recipientName} (${industry})`);
 
+        // Use campaign name as sender name for email signature
+        const senderName = campaignData.name || campaignData.sender_name || 'Your Team';
+
         const prompt = `Write a personalized cold email for a B2B outreach campaign.
 
 Campaign Details:
 - Service Description: ${campaignData.service_description}
 - Email Tone: ${campaignData.tone}
+- Sender Name: ${senderName}
 
 Target Business:
 - Name: ${recipientName}
@@ -158,15 +162,31 @@ Target Business:
 - City: ${city}
 - Description: ${description}
 
-Instructions:
-1. Write a concise, professional cold email (150-200 words)
-2. Personalize it based on the business's industry and location
-3. Keep the tone ${campaignData.tone}
-4. Focus on the service: ${campaignData.service_description}
-5. Include a clear call-to-action
-6. Do NOT use heavy formatting - plain text only
+STRICT Instructions:
+1. First line MUST be ONLY the subject (no "Subject:" prefix)
+2. Second line MUST be empty
+3. Write 2-3 SHORT paragraphs (each 2-3 sentences max)
+4. Separate each paragraph with a blank line
+5. Keep the tone ${campaignData.tone}
+6. Include a clear call-to-action
+7. End with blank line, then "Best regards," then sender name on new line
+8. NEVER use placeholders like [Your Name], [Your Company], [Contact Info], [Recipient's Name]
+9. Use the actual business name "${recipientName}" when addressing them
+10. Total length: 100-150 words maximum
 
-Email:`;
+EXACT Output format (follow this exactly):
+Compelling Subject Line Here
+
+Dear ${recipientName} Team,
+
+First paragraph with greeting and hook.
+
+Second paragraph with value proposition.
+
+Third paragraph with call-to-action.
+
+Best regards,
+${senderName}`;
 
         try {
           const completion = await openai.chat.completions.create({
@@ -196,11 +216,49 @@ Email:`;
             throw new Error('No content generated from OpenAI');
           }
 
+          // Extract subject line (first line) and body (rest)
+          const lines = generatedText.split('\n');
+          let emailSubject = 'Your Business Opportunity';
+          let emailBody = generatedText;
+
+          // First line is the subject (may or may not have "Subject:" prefix)
+          if (lines.length > 0) {
+            const firstLine = lines[0].trim();
+            // Remove "Subject:" prefix if present
+            emailSubject = firstLine.replace(/^Subject:\s*/i, '').trim();
+            // Body is everything after the first line (skip empty lines at start)
+            emailBody = lines.slice(1).join('\n').trim();
+          }
+
+          // Remove any remaining placeholders
+          emailBody = emailBody
+            .replace(/\[Your Name\]/gi, senderName)
+            .replace(/\[Your Company\]/gi, senderName)
+            .replace(/\[Your Company Name\]/gi, senderName)
+            .replace(/\[Your Phone Number\]/gi, '')
+            .replace(/\[Your Email Address\]/gi, '')
+            .replace(/\[Your Email\]/gi, '')
+            .replace(/\[Your Contact Information\]/gi, '')
+            .replace(/\[Contact Info\]/gi, '')
+            .replace(/\[Your Position\]/gi, '')
+            .replace(/\[Your Website\]/gi, '')
+            .replace(/\[Recipient's Name\]/gi, recipientName)
+            .trim();
+
+          // Convert plain text to HTML with proper paragraph formatting
+          const paragraphs = emailBody.split(/\n\s*\n/).filter(p => p.trim());
+          const htmlBody = paragraphs
+            .map(p => `<p style="margin-bottom: 16px;">${p.replace(/\n/g, '<br>')}</p>`)
+            .join('\n');
+
+          console.log(`[GENERATE EMAILS] Extracted subject: "${emailSubject}"`);
+
           // Update campaign item with generated content using Supabase
           const { error: updateError } = await supabase
             .from('campaign_items')
             .update({
-              email_content: generatedText,
+              email_subject: emailSubject,
+              email_content: htmlBody,
               status: 'generated',
               updated_at: new Date().toISOString(),
             })
