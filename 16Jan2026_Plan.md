@@ -58,6 +58,10 @@
 
 ## 10. Add a drop box to adjust the number of rows in each page of the list. L
 
+## 11. Automatically jump to Collections page after 'save to collection' M
+
+## 12. Delete the black background after click on save to collection. H
+
 # Collections
 
 ## ✅ 1. Fail to load leads in collection: H
@@ -130,10 +134,10 @@
 
 ## 9. ✅ Email Generation Error: transfer argument [Your Name], [Your Company] making paragraph. H5
 
-## 10. Multiple select at Recipients involve both collections and individuals  (manually input email) H 4
+## 10. ✅ Multiple select at Recipients involve both collections and individuals  (manually input email) H 4
 
 ## 11. check the interval code snippet in src\app\(dashboard)\campaigns\[id]\page.tsx L
 
-## 12. Fix bug: signature Your Company is wrong, should match with input Campaign Name. H1
+## 12. ✅ Fix bug: signature Your Company is wrong, should match with input Campaign Name. H1
 
-## Push to Vercel server by MCP.  H2
+## ✅ Push to Vercel server by MCP.  H2
