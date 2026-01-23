@@ -6,28 +6,36 @@ import { CampaignForm } from '@/components/campaigns/CampaignForm';
 import { CampaignPreview } from '@/components/campaigns/CampaignPreview';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Folder, Loader2 } from 'lucide-react';
+import { ArrowLeft, Folder, Loader2, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 export const dynamic = 'force-dynamic';
 
+// Type for individual recipient
+interface IndividualRecipient {
+  email: string;
+  name: string;
+}
+
+// Type for selected collection
+interface SelectedCollection {
+  id: string;
+  name: string;
+  itemCount: number;
+  businessIds: string[];
+  businessNames: string[];
+}
+
 export default function CreateCampaignPage() {
   const router = useRouter();
-  const [selectedBusinessIds, setSelectedBusinessIds] = useState<string[]>([]);
-  const [selectedBusinessNames, setSelectedBusinessNames] = useState<string[]>(
-    []
-  );
-  const [recipientMode, setRecipientMode] = useState<'collection' | 'manual'>('collection');
-  const [manualEmail, setManualEmail] = useState('');
-  const [manualName, setManualName] = useState('');
   const [formData, setFormData] = useState<{
     name: string;
     serviceDescription: string;
@@ -37,17 +45,20 @@ export default function CreateCampaignPage() {
 
   // Collections state
   const [collections, setCollections] = useState<Array<{ id: string; name: string; item_count: number }>>([]);
-  const [selectedCollectionId, setSelectedCollectionId] = useState<string>('');
-  const [selectedCollectionName, setSelectedCollectionName] = useState<string>('');
+  const [selectedCollections, setSelectedCollections] = useState<SelectedCollection[]>([]);
   const [isLoadingCollections, setIsLoadingCollections] = useState(false);
-  const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(false);
+
+  // Individual recipients state
+  const [individualRecipients, setIndividualRecipients] = useState<IndividualRecipient[]>([]);
+
+  // Modal state
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newRecipientEmail, setNewRecipientEmail] = useState('');
+  const [newRecipientName, setNewRecipientName] = useState('');
 
   useEffect(() => {
-    // Load user's collections when in collection mode
-    if (recipientMode === 'collection') {
-      loadCollections();
-    }
-  }, [recipientMode]);
+    loadCollections();
+  }, []);
 
   const loadCollections = async () => {
     setIsLoadingCollections(true);
@@ -66,62 +77,99 @@ export default function CreateCampaignPage() {
     }
   };
 
-  const handleCollectionSelect = async (collectionId: string) => {
-    if (!collectionId) {
-      setSelectedCollectionId('');
-      setSelectedCollectionName('');
-      setSelectedBusinessIds([]);
-      setSelectedBusinessNames([]);
+  const handleCollectionToggle = async (collectionId: string) => {
+    // Check if already selected
+    const isSelected = selectedCollections.some(c => c.id === collectionId);
+
+    if (isSelected) {
+      // Remove from selection
+      setSelectedCollections(prev => prev.filter(c => c.id !== collectionId));
+    } else {
+      // Add to selection - fetch businesses first
+      const collection = collections.find(c => c.id === collectionId);
+      if (!collection) return;
+
+      try {
+        const response = await fetch(`/api/collections/${collectionId}/items`);
+        if (!response.ok) {
+          throw new Error('Failed to load collection items');
+        }
+        const data = await response.json();
+
+        setSelectedCollections(prev => [...prev, {
+          id: collectionId,
+          name: collection.name,
+          itemCount: collection.item_count,
+          businessIds: data.ids || [],
+          businessNames: data.names || [],
+        }]);
+      } catch (error) {
+        console.error('Error loading collection items:', error);
+        alert('Failed to load businesses from collection. Please try again.');
+      }
+    }
+  };
+
+  const handleRemoveCollection = (collectionId: string) => {
+    setSelectedCollections(prev => prev.filter(c => c.id !== collectionId));
+  };
+
+  const handleRemoveIndividualRecipient = (email: string) => {
+    setIndividualRecipients(prev => prev.filter(r => r.email !== email));
+  };
+
+  const handleAddRecipient = () => {
+    if (!newRecipientEmail.trim()) {
+      alert('Please enter an email address.');
       return;
     }
 
-    const collection = collections.find((c) => c.id === collectionId);
-    if (!collection) return;
-
-    setSelectedCollectionId(collectionId);
-    setSelectedCollectionName(collection.name);
-    setIsLoadingBusinesses(true);
-
-    try {
-      // Fetch businesses from the collection
-      const response = await fetch(`/api/collections/${collectionId}/items`);
-      if (!response.ok) {
-        throw new Error('Failed to load collection items');
-      }
-      const data = await response.json();
-
-      setSelectedBusinessIds(data.ids || []);
-      setSelectedBusinessNames(data.names || []);
-    } catch (error) {
-      console.error('Error loading collection items:', error);
-      alert('Failed to load businesses from collection. Please try again.');
-      setSelectedBusinessIds([]);
-      setSelectedBusinessNames([]);
-    } finally {
-      setIsLoadingBusinesses(false);
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newRecipientEmail.trim())) {
+      alert('Please enter a valid email address.');
+      return;
     }
+
+    // Check for duplicates
+    if (individualRecipients.some(r => r.email === newRecipientEmail.trim())) {
+      alert('This email address has already been added.');
+      return;
+    }
+
+    setIndividualRecipients(prev => [...prev, {
+      email: newRecipientEmail.trim(),
+      name: newRecipientName.trim(),
+    }]);
+
+    // Reset and close modal
+    setNewRecipientEmail('');
+    setNewRecipientName('');
+    setIsAddModalOpen(false);
   };
+
+  // Calculate total recipients
+  const totalCollectionRecipients = selectedCollections.reduce((sum, c) => sum + c.businessIds.length, 0);
+  const totalRecipients = totalCollectionRecipients + individualRecipients.length;
+
+  // Get all business names for preview
+  const allBusinessNames = [
+    ...selectedCollections.flatMap(c => c.businessNames),
+    ...individualRecipients.map(r => r.name ? `${r.name} <${r.email}>` : r.email),
+  ];
+
+  // Get all business IDs for submission
+  const allBusinessIds = selectedCollections.flatMap(c => c.businessIds);
 
   const handleSubmit = async (values: {
     name: string;
     serviceDescription: string;
     emailTone: string;
   }) => {
-    // Check prerequisites based on mode
-    if (recipientMode === 'manual') {
-      if (!manualEmail || manualEmail.trim() === '') {
-        alert('Please enter an email address.');
-        return;
-      }
-    } else {
-      if (!selectedCollectionId) {
-        alert('Please select a collection.');
-        return;
-      }
-      if (selectedBusinessIds.length === 0) {
-        alert('No businesses loaded from the collection. Please try selecting a different collection.');
-        return;
-      }
+    // Check prerequisites
+    if (selectedCollections.length === 0 && individualRecipients.length === 0) {
+      alert('Please select at least one collection or add individual recipients.');
+      return;
     }
 
     setIsSubmitting(true);
@@ -134,15 +182,18 @@ export default function CreateCampaignPage() {
         emailTone: values.emailTone,
       };
 
-      if (recipientMode === 'manual') {
-        requestBody.manualEmail = manualEmail.trim();
-        if (manualName.trim()) {
-          requestBody.manualName = manualName.trim();
+      // Include collection business IDs if any
+      if (allBusinessIds.length > 0) {
+        requestBody.businessIds = allBusinessIds.map((id: string) => parseInt(id, 10));
+        // Use first collection ID for backward compatibility
+        if (selectedCollections.length > 0) {
+          requestBody.collectionId = parseInt(selectedCollections[0].id, 10);
         }
-      } else {
-        // Convert string IDs to numbers for API validation
-        requestBody.businessIds = selectedBusinessIds.map((id: string) => parseInt(id, 10));
-        requestBody.collectionId = parseInt(selectedCollectionId, 10);
+      }
+
+      // Include individual recipients if any
+      if (individualRecipients.length > 0) {
+        requestBody.individualRecipients = individualRecipients;
       }
 
       const response = await fetch('/api/campaigns', {
@@ -190,149 +241,188 @@ export default function CreateCampaignPage() {
         <CardContent className="pt-6">
           <h3 className="text-lg font-medium mb-4">Recipients</h3>
 
-          {/* Radio Button Options */}
-          <div className="space-y-3 mb-4">
-            <div
-              className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${
-                recipientMode === 'collection'
-                  ? 'border-neutral-900 bg-neutral-50'
-                  : 'border-neutral-200 hover:border-neutral-300'
-              }`}
-              onClick={() => setRecipientMode('collection')}
-            >
-              <input
-                type="radio"
-                checked={recipientMode === 'collection'}
-                onChange={() => setRecipientMode('collection')}
-                className="mr-3 h-4 w-4"
-              />
-              <div className="flex-1">
-                <div className="font-medium">From Collection</div>
-                <div className="text-sm text-gray-500">
-                  Select businesses from your saved collections
-                </div>
+          {/* Capsule Elements for Collections and Add Button */}
+          <div className="flex flex-wrap items-center gap-3">
+            {isLoadingCollections ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                <span className="text-sm text-muted-foreground">Loading collections...</span>
               </div>
-            </div>
+            ) : collections.length === 0 ? (
+              <div className="text-center py-8 border border-dashed rounded-md w-full">
+                <Folder className="mx-auto h-12 w-12 text-gray-400" />
+                <p className="mt-2 text-sm text-gray-600">No collections found</p>
+                <p className="text-xs text-gray-500">Save businesses to collections from the Leads page first</p>
+              </div>
+            ) : (
+              <>
+                {/* Collection Capsules */}
+                {collections.map((col) => {
+                  const isSelected = selectedCollections.some(c => c.id === col.id);
+                  return (
+                    <div
+                      key={col.id}
+                      className={`relative inline-flex items-center px-4 py-2 rounded-full border cursor-pointer transition-all ${
+                        isSelected
+                          ? 'bg-neutral-100 border-neutral-400 shadow-sm'
+                          : 'bg-white border-neutral-300 hover:border-neutral-400'
+                      }`}
+                      onClick={() => handleCollectionToggle(col.id)}
+                    >
+                      <span className="text-sm font-medium text-neutral-700">{col.name}</span>
+                      {isSelected && (
+                        <button
+                          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveCollection(col.id);
+                          }}
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
 
-            <div
-              className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${
-                recipientMode === 'manual'
-                  ? 'border-neutral-900 bg-neutral-50'
-                  : 'border-neutral-200 hover:border-neutral-300'
-              }`}
-              onClick={() => setRecipientMode('manual')}
-            >
-              <input
-                type="radio"
-                checked={recipientMode === 'manual'}
-                onChange={() => setRecipientMode('manual')}
-                className="mr-3 h-4 w-4"
-              />
-              <div className="flex-1">
-                <div className="font-medium">Manual Entry</div>
-                <div className="text-sm text-gray-500">
-                  Enter a single email address manually
-                </div>
-              </div>
-            </div>
+                {/* Individual Recipient Capsules */}
+                {individualRecipients.map((recipient) => (
+                  <div
+                    key={recipient.email}
+                    className="relative inline-flex items-center px-4 py-2 rounded-full border bg-blue-50 border-blue-300"
+                  >
+                    <span className="text-sm font-medium text-blue-700">
+                      {recipient.name || recipient.email}
+                    </span>
+                    <button
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                      onClick={() => handleRemoveIndividualRecipient(recipient.email)}
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                ))}
+
+                {/* Add Button */}
+                <button
+                  className="inline-flex items-center px-4 py-2 rounded-full border-2 border-dashed border-neutral-300 text-neutral-500 hover:border-neutral-400 hover:text-neutral-600 transition-colors"
+                  onClick={() => setIsAddModalOpen(true)}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  <span className="text-sm">Add</span>
+                </button>
+              </>
+            )}
           </div>
 
-          {/* Collection Selection */}
-          {recipientMode === 'collection' && (
-            <div className="mt-4 space-y-3">
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Select Collection *
-                </label>
-                {isLoadingCollections ? (
-                  <div className="flex items-center justify-center h-10 rounded-md border border-input bg-background px-3 py-2">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    <span className="text-sm text-muted-foreground">Loading collections...</span>
-                  </div>
-                ) : collections.length === 0 ? (
-                  <div className="text-center py-8 border border-dashed rounded-md">
-                    <Folder className="mx-auto h-12 w-12 text-gray-400" />
-                    <p className="mt-2 text-sm text-gray-600">No collections found</p>
-                    <p className="text-xs text-gray-500">Save businesses to collections from the Leads page first</p>
-                  </div>
-                ) : (
-                  <Select
-                    value={selectedCollectionId}
-                    onValueChange={(value) => handleCollectionSelect(value)}
-                    disabled={isLoadingCollections || collections.length === 0}
+          {/* Selected Recipients Summary Grid */}
+          {(selectedCollections.length > 0 || individualRecipients.length > 0) && (
+            <div className="mt-6">
+              <Separator className="mb-4" />
+              <h4 className="text-sm font-medium text-neutral-700 mb-3">
+                Selected Recipients ({totalRecipients} total)
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {/* Collection Items */}
+                {selectedCollections.map((col) => (
+                  <div
+                    key={col.id}
+                    className="flex items-center p-3 bg-neutral-50 rounded-lg border border-neutral-200"
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a collection..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {collections.map((col) => (
-                        <SelectItem key={col.id} value={col.id}>
-                          {col.name} ({col.item_count} businesses)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-
-              {/* Loading businesses indicator */}
-              {isLoadingBusinesses && (
-                <div className="flex items-center justify-center py-4">
-                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                  <span className="text-sm text-muted-foreground">Loading businesses...</span>
-                </div>
-              )}
-
-              {/* Collection summary */}
-              {selectedCollectionId && !isLoadingBusinesses && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <div className="flex items-start">
-                    <Folder className="h-5 w-5 text-blue-600 mr-2 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-blue-900">
-                        {selectedCollectionName}
-                      </p>
-                      <p className="text-xs text-blue-700">
-                        {selectedBusinessIds.length} businesses selected
-                      </p>
+                    <Folder className="w-5 h-5 text-neutral-500 mr-2 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-neutral-800 truncate">{col.name}</p>
+                      <p className="text-xs text-neutral-500">{col.businessIds.length} businesses</p>
                     </div>
+                    <button
+                      className="ml-2 p-1 hover:bg-neutral-200 rounded transition-colors"
+                      onClick={() => handleRemoveCollection(col.id)}
+                    >
+                      <X className="w-4 h-4 text-neutral-500" />
+                    </button>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                ))}
 
-          {/* Manual Entry Fields */}
-          {recipientMode === 'manual' && (
-            <div className="mt-4 space-y-3">
-              <div>
-                <label className="text-sm font-medium mb-1 block">
-                  Recipient Name (Optional)
-                </label>
-                <Input
-                  type="text"
-                  placeholder="Enter recipient name (e.g., John Smith)"
-                  value={manualName}
-                  onChange={(e) => setManualName(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">
-                  Email Address *
-                </label>
-                <Input
-                  type="email"
-                  placeholder="Enter email address (e.g., john@example.com)"
-                  value={manualEmail}
-                  onChange={(e) => setManualEmail(e.target.value)}
-                  className="w-full"
-                />
+                {/* Individual Recipients */}
+                {individualRecipients.map((recipient) => (
+                  <div
+                    key={recipient.email}
+                    className="flex items-center p-3 bg-blue-50 rounded-lg border border-blue-200"
+                  >
+                    <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+                      <span className="text-xs text-white font-medium">
+                        {(recipient.name || recipient.email).charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-blue-800 truncate">
+                        {recipient.name || 'Individual'}
+                      </p>
+                      <p className="text-xs text-blue-600 truncate">{recipient.email}</p>
+                    </div>
+                    <button
+                      className="ml-2 p-1 hover:bg-blue-100 rounded transition-colors"
+                      onClick={() => handleRemoveIndividualRecipient(recipient.email)}
+                    >
+                      <X className="w-4 h-4 text-blue-500" />
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Add Individual Recipient Modal */}
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Item</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block text-neutral-700">
+                Email Address
+              </label>
+              <Input
+                type="email"
+                placeholder="Enter email address"
+                value={newRecipientEmail}
+                onChange={(e) => setNewRecipientEmail(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block text-neutral-700">
+                Recipient Name
+              </label>
+              <Input
+                type="text"
+                placeholder="Enter recipient name"
+                value={newRecipientName}
+                onChange={(e) => setNewRecipientName(e.target.value)}
+                className="w-full"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setNewRecipientEmail('');
+                setNewRecipientName('');
+                setIsAddModalOpen(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleAddRecipient}>
+              Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
@@ -350,38 +440,38 @@ export default function CreateCampaignPage() {
               name={formData.name}
               serviceDescription={formData.serviceDescription}
               emailTone={formData.emailTone}
-              businessCount={recipientMode === 'manual' ? 1 : selectedBusinessIds.length}
-              selectedBusinessNames={
-                recipientMode === 'manual'
-                  ? [manualName ? `${manualName} <${manualEmail}>` : manualEmail || 'Manual Recipient']
-                  : selectedBusinessNames
-              }
-              isManualMode={recipientMode === 'manual'}
+              businessCount={totalRecipients}
+              selectedBusinessNames={allBusinessNames}
+              isManualMode={individualRecipients.length > 0 && selectedCollections.length === 0}
             />
           )}
 
-          {/* Selected Businesses - Only show when in collection mode */}
-          {recipientMode === 'collection' && (
+          {/* Selected Businesses Summary */}
+          {totalRecipients > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Selected Businesses</CardTitle>
+                <CardTitle>Selected Recipients</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-600 mb-2">
-                  {selectedBusinessIds.length} business(es) selected
+                  {totalRecipients} recipient(s) selected
                 </p>
-                {selectedBusinessNames.length > 0 ? (
-                  <div className="space-y-1">
-                    {selectedBusinessNames.map((name, index) => (
+                {allBusinessNames.length > 0 ? (
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {allBusinessNames.slice(0, 20).map((name, index) => (
                       <p key={index} className="text-sm">
                         • {name}
                       </p>
                     ))}
+                    {allBusinessNames.length > 20 && (
+                      <p className="text-sm text-gray-500 italic">
+                        ... and {allBusinessNames.length - 20} more
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <p className="text-sm text-gray-500">
-                    Business names not available, but {selectedBusinessIds.length}{' '}
-                    business(es) are selected
+                    {totalRecipients} recipient(s) selected
                   </p>
                 )}
               </CardContent>
