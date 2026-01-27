@@ -1,11 +1,9 @@
 import { inngest } from '@/lib/inngest/client';
 import { getCompanyDbClient } from '@/lib/db/supabase';
-import OpenAI from 'openai';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// DMXAPI Configuration
+const DMXAPI_URL = 'https://www.dmxapi.cn/v1/chat/completions';
+const DMXAPI_MODEL = 'DeepSeek-V3.2';
 
 export const generateEmails = inngest.createFunction(
   {
@@ -189,23 +187,44 @@ Best regards,
 ${senderName}`;
 
         try {
-          const completion = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are an expert B2B copywriter specializing in cold outreach emails.',
-              },
-              {
-                role: 'user',
-                content: prompt,
-              },
-            ],
-            temperature: 0.7,
-            max_tokens: 300,
+          console.log(`[GENERATE EMAILS] DMXAPI_KEY set: ${!!process.env.DMXAPI_KEY}`);
+          console.log(`[GENERATE EMAILS] Calling DMXAPI for ${recipientName}...`);
+
+          // Direct fetch call to DMXAPI
+          const response = await fetch(DMXAPI_URL, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.DMXAPI_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: DMXAPI_MODEL,
+              messages: [
+                {
+                  role: 'system',
+                  content: 'You are an expert B2B copywriter specializing in cold outreach emails.',
+                },
+                {
+                  role: 'user',
+                  content: prompt,
+                },
+              ],
+              temperature: 0.7,
+              max_tokens: 2000,
+            }),
           });
 
-          const generatedText = completion.choices[0]?.message?.content?.trim();
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`DMXAPI request failed: ${response.status} - ${errorText}`);
+          }
+
+          const completion = await response.json();
+
+          // Log full API response for debugging
+          console.log(`[GENERATE EMAILS] API Response for ${recipientName}:`, JSON.stringify(completion, null, 2));
+
+          const generatedText = completion.choices?.[0]?.message?.content?.trim();
 
           console.log(`[GENERATE EMAILS] Generated text for ${recipientName}:`, {
             length: generatedText?.length || 0,
@@ -213,7 +232,7 @@ ${senderName}`;
           });
 
           if (!generatedText) {
-            throw new Error('No content generated from OpenAI');
+            throw new Error('No content generated from LLM API');
           }
 
           // Extract subject line (first line) and body (rest)

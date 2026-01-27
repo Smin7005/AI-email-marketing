@@ -60,7 +60,13 @@
 
 ## 11. Automatically jump to Collections page after 'save to collection' M
 
-## 12. Delete the black background after click on save to collection. H
+## ✅ 12. Delete the black background after click on save to collection. H
+
+## 13. Adjust the width of column, right side of the table. M
+
+## 14. Update industry filter data, now there are missing industry_name from rawdata_yellowpage table. H
+
+## 15. Update city name auto complete. M
 
 # Collections
 
