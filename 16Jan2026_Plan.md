@@ -136,7 +136,7 @@
 
 ## 10. ✅ Multiple select at Recipients involve both collections and individuals  (manually input email) H 4
 
-## 11. check the interval code snippet in src\app\(dashboard)\campaigns\[id]\page.tsx L
+## 11. Check the interval code snippet in src\app\(dashboard)\campaigns\[id]\page.tsx L
 
 ## 12. ✅ Fix bug: signature Your Company is wrong, should match with input Campaign Name. H1
 
