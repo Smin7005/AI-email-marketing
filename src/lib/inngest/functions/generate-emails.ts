@@ -1,12 +1,9 @@
 import { inngest } from '../client';
 import { getCompanyDbClient } from '../../db/supabase';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  timeout: 60000, // 60 second timeout for API calls
-  maxRetries: 3, // Built-in retry logic for transient errors
-});
+// DMXAPI Configuration
+const DMXAPI_URL = 'https://www.dmxapi.cn/v1/chat/completions';
+const DMXAPI_MODEL = 'DeepSeek-V3.2';
 
 /**
  * Create email generation prompt
@@ -66,7 +63,7 @@ Subject: [Your compelling subject line]
 }
 
 /**
- * Generate email with retry logic for OpenAI API
+ * Generate email with retry logic for DMXAPI (DeepSeek-V3.2)
  */
 async function generateEmailWithRetry(
   prompt: string,
@@ -76,16 +73,39 @@ async function generateEmailWithRetry(
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 500,
-        temperature: 0.7,
+      const response = await fetch(DMXAPI_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.DMXAPI_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: DMXAPI_MODEL,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert B2B copywriter specializing in cold outreach emails.',
+            },
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          temperature: 0.7,
+          max_tokens: 2000,
+        }),
       });
 
-      const content = completion.choices[0]?.message?.content;
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`DMXAPI request failed: ${response.status} - ${errorText}`);
+      }
+
+      const completion = await response.json();
+      const content = completion.choices?.[0]?.message?.content?.trim();
+
       if (!content) {
-        throw new Error('No content generated from OpenAI');
+        throw new Error('No content generated from DMXAPI');
       }
 
       // Parse subject and body from response
@@ -117,10 +137,10 @@ async function generateEmailWithRetry(
       return { subject, content: body };
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      console.error(`OpenAI API attempt ${attempt}/${maxRetries} failed:`, lastError.message);
+      console.error(`DMXAPI attempt ${attempt}/${maxRetries} failed:`, lastError.message);
 
-      // Don't retry on certain errors
-      if (lastError.message.includes('API key') || lastError.message.includes('insufficient_quota')) {
+      // Don't retry on authentication/authorization errors
+      if (lastError.message.includes('401') || lastError.message.includes('403')) {
         throw lastError;
       }
 
