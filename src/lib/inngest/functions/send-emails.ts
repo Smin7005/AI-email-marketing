@@ -357,7 +357,7 @@ export const sendCampaignBatch = inngest.createFunction(
             );
 
             // Send via Resend
-            const fromAddress = `${campaign.sender_name || 'Campaign'} <${campaign.sender_email || 'onboarding@resend.dev'}>`;
+            const fromAddress = `${campaign.sender_name || 'Campaign'} <${campaign.sender_email || 'onboarding@mail-marketing.online'}>`;
             console.log('[SendEmails] Sending email with from:', fromAddress, 'to:', email.businessEmail);
 
             const result = await emailService.sendEmail({
