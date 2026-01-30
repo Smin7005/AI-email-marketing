@@ -320,87 +320,97 @@ export const sendCampaignBatch = inngest.createFunction(
       return Array.from(suppressedSet);
     });
 
-    // Send emails with rate limiting
+    // Send emails with rate limiting (sequential to avoid 429 errors)
     const results = await step.run('send-emails', async () => {
       console.log('[SendEmails] Starting to send', emails.length, 'emails');
       console.log('[SendEmails] Suppressed emails list:', suppressedEmails);
+
+      // Always use FROM_EMAIL from environment at send time (not stored campaign value)
+      const senderEmail = process.env.FROM_EMAIL || 'onboarding@resend.dev';
+      const senderName = campaign.sender_name || 'Campaign';
+
       console.log('[SendEmails] Sender info:', {
-        sender_name: campaign.sender_name,
-        sender_email: campaign.sender_email,
-        from: `${campaign.sender_name} <${campaign.sender_email}>`,
+        sender_name: senderName,
+        sender_email: senderEmail,
+        from: `${senderName} <${senderEmail}>`,
       });
 
-      const sendResults = await Promise.allSettled(
-        emails.map(async (email) => {
-          console.log('[SendEmails] Processing email for:', email.businessEmail);
+      const sendResults: Array<{
+        itemId: number;
+        status: 'sent' | 'suppressed' | 'failed';
+        messageId: string | null;
+        error: string | null;
+      }> = [];
 
-          // Check if suppressed (using Array.includes instead of Set.has)
-          if (email.businessEmail && suppressedEmails.includes(email.businessEmail.toLowerCase())) {
-            console.log('[SendEmails] Email suppressed:', email.businessEmail);
-            return {
-              itemId: email.itemId,
-              status: 'suppressed' as const,
-              messageId: null,
-              error: null,
-            };
+      // Send emails sequentially with delay to respect Resend rate limit (2 req/sec)
+      for (const email of emails) {
+        console.log('[SendEmails] Processing email for:', email.businessEmail);
+
+        // Check if suppressed (using Array.includes instead of Set.has)
+        if (email.businessEmail && suppressedEmails.includes(email.businessEmail.toLowerCase())) {
+          console.log('[SendEmails] Email suppressed:', email.businessEmail);
+          sendResults.push({
+            itemId: email.itemId,
+            status: 'suppressed',
+            messageId: null,
+            error: null,
+          });
+          continue;
+        }
+
+        try {
+          // Generate unique unsubscribe link
+          const unsubscribeToken = generateUnsubscribeToken(organizationId, email.itemId);
+          const unsubscribeUrl = `${process.env.APP_URL || 'http://localhost:3000'}/unsubscribe/${unsubscribeToken}`;
+
+          // Add unsubscribe link to email
+          const emailContent = emailService.addUnsubscribeToEmail(
+            email.emailContent || '',
+            unsubscribeUrl
+          );
+
+          // Send via Resend - always use FROM_EMAIL from environment
+          const fromAddress = `${senderName} <${senderEmail}>`;
+          console.log('[SendEmails] Sending email with from:', fromAddress, 'to:', email.businessEmail);
+
+          const result = await emailService.sendEmail({
+            from: fromAddress,
+            to: email.businessEmail!,
+            subject: email.emailSubject || 'No Subject',
+            html: emailContent,
+            tags: [
+              { name: 'campaign', value: campaign.id.toString() },
+              { name: 'organization', value: organizationId },
+            ],
+          });
+
+          console.log('[SendEmails] Email result:', result);
+
+          if (result.error) {
+            throw new Error(result.error);
           }
 
-          try {
-            // Generate unique unsubscribe link
-            const unsubscribeToken = generateUnsubscribeToken(organizationId, email.itemId);
-            const unsubscribeUrl = `${process.env.APP_URL || 'http://localhost:3000'}/unsubscribe/${unsubscribeToken}`;
+          sendResults.push({
+            itemId: email.itemId,
+            status: 'sent',
+            messageId: result.id,
+            error: null,
+          });
+        } catch (error) {
+          console.error(`[SendEmails] Failed to send email to ${email.businessEmail}:`, error);
+          sendResults.push({
+            itemId: email.itemId,
+            status: 'failed',
+            messageId: null,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
 
-            // Add unsubscribe link to email
-            const emailContent = emailService.addUnsubscribeToEmail(
-              email.emailContent || '',
-              unsubscribeUrl
-            );
+        // Wait 600ms between emails to stay under 2 req/sec rate limit
+        await new Promise(resolve => setTimeout(resolve, 600));
+      }
 
-            // Send via Resend
-            const fromAddress = `${campaign.sender_name || 'Campaign'} <${campaign.sender_email || 'onboarding@mail-marketing.online'}>`;
-            console.log('[SendEmails] Sending email with from:', fromAddress, 'to:', email.businessEmail);
-
-            const result = await emailService.sendEmail({
-              from: fromAddress,
-              to: email.businessEmail!,
-              subject: email.emailSubject || 'No Subject',
-              html: emailContent,
-              tags: [
-                { name: 'campaign', value: campaign.id.toString() },
-                { name: 'organization', value: organizationId },
-              ],
-            });
-
-            console.log('[SendEmails] Email result:', result);
-
-            if (result.error) {
-              throw new Error(result.error);
-            }
-
-            return {
-              itemId: email.itemId,
-              status: 'sent' as const,
-              messageId: result.id,
-              error: null,
-            };
-          } catch (error) {
-            console.error(`[SendEmails] Failed to send email to ${email.businessEmail}:`, error);
-            return {
-              itemId: email.itemId,
-              status: 'failed' as const,
-              messageId: null,
-              error: error instanceof Error ? error.message : 'Unknown error',
-            };
-          }
-        })
-      );
-
-      return sendResults.map(r => r.status === 'fulfilled' ? r.value : {
-        itemId: 0,
-        status: 'failed' as const,
-        messageId: null,
-        error: 'Promise rejected',
-      });
+      return sendResults;
     });
 
     // Update database with send results
