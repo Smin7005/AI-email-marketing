@@ -173,4 +173,6 @@
 
 ## 1. Check the layout colour of drop down box. M
 
-## 2. Check the bugs at vercel deployments between my account and company's account.
+## 2. Check the bugs at vercel deployments between my account and company's account. M
+
+## 3. Change the domain name of email sending. H
