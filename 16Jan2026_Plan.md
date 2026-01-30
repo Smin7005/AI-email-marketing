@@ -159,7 +159,7 @@
 
 ## 18. Display email content as normal HTML format in email preview. H
 
-## 19. Fix bug at manually add recipients email address. H
+## 19. ✅ Fix bug at manually add recipients email address. H
 
 ## 20. Merge 2 components into a long component, delete total respects, fix the error at process bar. H
 
@@ -175,4 +175,4 @@
 
 ## 2. Check the bugs at vercel deployments between my account and company's account. M
 
-## 3. Change the domain name of email sending. H
+## 3. ✅ Change the domain name of email sending. H
