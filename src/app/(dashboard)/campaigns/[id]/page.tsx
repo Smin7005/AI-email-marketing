@@ -28,6 +28,7 @@ interface Campaign {
   status: 'draft' | 'generating' | 'ready' | 'sending' | 'sent';
   totalRecipients: number;
   generatedCount: number;
+  sentCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -68,11 +69,11 @@ export default function CampaignDetailPage() {
       }
       return response.json();
     },
-    // Auto-refresh every 3 seconds while generating or sending
+    // Auto-refresh every 1 seconds while generating or sending
     refetchInterval: (query) => {
       const status = query.state.data?.status;
       if (status === 'generating' || status === 'sending') {
-        return 3000;
+        return 1000;
       }
       return false;
     },
@@ -259,6 +260,11 @@ export default function CampaignDetailPage() {
       ? Math.round((campaign.generatedCount / campaign.totalRecipients) * 100)
       : 0;
 
+  const sentPercentage =
+    campaign.totalRecipients > 0
+      ? Math.round((campaign.sentCount / campaign.totalRecipients) * 100)
+      : 0;
+
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl">
       <Button variant="ghost" onClick={() => router.back()} className="mb-4">
@@ -316,39 +322,30 @@ export default function CampaignDetailPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card>
+          {/* Merged: Sent Progress Card - spans 2 columns */}
+          <Card className="md:col-span-2">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">
-                Total Prospects
+                Sent Progress
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {campaign.totalRecipients}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Generated</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {campaign.generatedCount}/{campaign.totalRecipients}
+                {campaign.sentCount}/{campaign.totalRecipients}
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all"
-                  style={{ width: `${progressPercentage}%` }}
+                  className="bg-green-600 h-2 rounded-full transition-all"
+                  style={{ width: `${sentPercentage}%` }}
                 ></div>
               </div>
               <p className="text-xs text-gray-600 mt-1">
-                {progressPercentage}% complete
+                {sentPercentage}% sent
               </p>
             </CardContent>
           </Card>
 
+          {/* Email Tone Card */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">Email Tone</CardTitle>

@@ -55,8 +55,9 @@ export async function GET(
       serviceDescription: campaign.serviceDescription,
       emailTone: campaign.tone,
       status: campaign.status,
-      businessCount: campaign.totalRecipients,
+      totalRecipients: campaign.totalRecipients,
       generatedCount: metrics.generated,
+      sentCount: metrics.sent,
       createdAt: campaign.createdAt,
       updatedAt: campaign.updatedAt,
     });
