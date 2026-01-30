@@ -1,8 +1,9 @@
+# vercel domains: https://ai-email-marketing-test.vercel.app/
+
 # responsive designing
 
-
 # Leads
-
+ 
 ## 1. ✅ Decrease the selection button from 2 columns to 1 column. H
 
 ## 2. ✅ Seperate 'Contact' column into 2 column: 'Phone_Number' and 'Email'. H
@@ -62,11 +63,12 @@
 
 ## ✅ 12. Delete the black background after click on save to collection. H
 
-## 13. Adjust the width of column, right side of the table. M
 
 ## 14. Update industry filter data, now there are missing industry_name from rawdata_yellowpage table. H
 
 ## 15. Update city name auto complete. M
+
+## 16. Add state name selector between city input and filter. L
 
 # Collections
 
@@ -84,7 +86,9 @@
 
 - it should allow users to modify collection name, and add or delete leads in this collection.
 
-## 3. Refine collection list display layout M
+## 3. Refine collection list display layout L
+
+## 4. Update the layout of each collections, match to Leads page. H
 
 # Campaigns
 
@@ -128,7 +132,7 @@
 
 ## 3. Improve the layout: table component L
 
-## 4. Replace API of generating eamil. H 3
+## 4. ✅ Replace API of generating eamil. H 3
 
 ## 5. ✅ Delete inner side scrollbar, and set Scrollbar in create campaign to Google browser scrollbar. H1
 
@@ -142,8 +146,31 @@
 
 ## 10. ✅ Multiple select at Recipients involve both collections and individuals  (manually input email) H 4
 
-## 11. Check the interval code snippet in src\app\(dashboard)\campaigns\[id]\page.tsx L
+## 11. ✅ Check the interval code snippet in src\app\(dashboard)\campaigns\[id]\page.tsx L
 
 ## 12. ✅ Fix bug: signature Your Company is wrong, should match with input Campaign Name. H1
 
-## ✅ Push to Vercel server by MCP.  H2
+## 13. ✅ Push to Vercel server by MCP.  H2
+
+## 15. Save inputs before email generation. M
+
+## 16. ✅ Find out the meaning of Total Prospects. H
+       - A: how many businesses or contacts will receive emails from this campaign.
+
+## 18. Display email content as normal HTML format in email preview. H
+
+## 19. Fix bug at manually add recipients email address. H
+
+## 20. Merge 2 components into a long component, delete total respects, fix the error at process bar. H
+
+# Settings 
+
+## 1. Research Multi-tenant user domain verfication solution. M
+
+## 2. ✅ Verify domain name on Resend. H
+
+# Entire Website
+
+## 1. Check the layout colour of drop down box. M
+
+## 2. Check the bugs at vercel deployments between my account and company's account.
