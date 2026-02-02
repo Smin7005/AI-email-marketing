@@ -92,6 +92,8 @@ function CreateCampaignContent() {
       } catch (error) {
         console.error('Error clearing draft from sessionStorage:', error);
       }
+      // Remove ?new=true from URL so "Back" navigation won't clear draft again
+      router.replace('/campaigns/create');
       setIsDraftLoaded(true);
       return;
     }
@@ -116,7 +118,7 @@ function CreateCampaignContent() {
       console.error('Error loading draft from sessionStorage:', error);
     }
     setIsDraftLoaded(true);
-  }, [isNewCampaign]);
+  }, [isNewCampaign, router]);
 
   // Save draft to sessionStorage when state changes
   const saveDraft = useCallback((
