@@ -44,24 +44,14 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [isRemoving, setIsRemoving] = useState(false);
 
-  // Column definitions
+  // Column definitions - matching LeadsTable structure
   const columnDefs: ColDef[] = [
-    {
-      headerName: '',
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
-      width: 50,
-      pinned: 'left',
-      lockPosition: true,
-      suppressMovable: true,
-      rowDrag: false,
-    },
     {
       headerName: 'Business',
       field: 'companyinfo.company_name',
       filter: true,
       sortable: true,
-      width: 250,
+      width: 200,
       cellRenderer: (params: any) => {
         const company = params.data?.companyinfo;
         const companyName = company?.company_name || 'Unknown';
@@ -77,7 +67,7 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
       field: 'companyinfo.category_name',
       filter: true,
       sortable: true,
-      width: 200,
+      width: 150,
       cellRenderer: (params: any) => {
         const company = params.data?.companyinfo;
         const category = company?.category_name;
@@ -85,64 +75,97 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
       },
     },
     {
-      headerName: 'Contact',
-      width: 250,
+      headerName: 'Phone_Number',
+      field: 'companyinfo.phone_number',
+      filter: true,
+      sortable: true,
+      width: 140,
       cellRenderer: (params: any) => {
-        const data = params.data;
-        const company = data?.companyinfo;
-
-        if (!company) {
-          return <div className="text-sm text-gray-400">No contact info</div>;
-        }
-
+        const company = params.data?.companyinfo;
         return (
-          <div className="space-y-1 py-2">
-            {company.email && (
-              <div className="flex items-center text-sm text-gray-600">
-                <Mail className="h-3 w-3 mr-1 text-gray-400" />
-                <a
-                  href={`mailto:${company.email}`}
-                  className="hover:text-blue-600 truncate max-w-[200px] block"
-                >
-                  {company.email}
-                </a>
-              </div>
-            )}
-            {company.phone_number && (
+          <div className="py-2">
+            {company?.phone_number ? (
               <div className="flex items-center text-sm text-gray-600">
                 <Phone className="h-3 w-3 mr-1 text-gray-400" />
                 <a href={`tel:${company.phone_number}`} className="hover:text-blue-600">
                   {company.phone_number}
                 </a>
               </div>
-            )}
-            {!company.email && !company.phone_number && (
-              <div className="text-sm text-gray-400">No contact info</div>
+            ) : (
+              <div className="text-sm text-gray-400">-</div>
             )}
           </div>
         );
       },
     },
     {
-      headerName: 'Address',
-      width: 300,
+      headerName: 'Email',
+      field: 'companyinfo.email',
+      filter: true,
+      sortable: true,
+      width: 200,
       cellRenderer: (params: any) => {
-        const data = params.data;
-        const company = data?.companyinfo;
-
-        if (!company) {
-          return <div className="text-sm text-gray-600 truncate py-2 max-w-[280px]">-</div>;
-        }
-
-        const addressParts = [
-          company.address_suburb,
-          company.address_state,
-          company.address_postcode
-        ].filter(Boolean);
-        const fullAddress = addressParts.join(', ');
+        const company = params.data?.companyinfo;
         return (
-          <div className="text-sm text-gray-600 truncate py-2 max-w-[280px]">
-            {fullAddress || '-'}
+          <div className="py-2">
+            {company?.email ? (
+              <div className="flex items-center text-sm text-gray-600">
+                <Mail className="h-3 w-3 mr-1 text-gray-400" />
+                <a
+                  href={`mailto:${company.email}`}
+                  className="hover:text-blue-600 truncate max-w-[180px] block"
+                >
+                  {company.email}
+                </a>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-400">-</div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      headerName: 'Detail_Address',
+      field: 'companyinfo.address_suburb',
+      filter: true,
+      sortable: true,
+      width: 150,
+      cellRenderer: (params: any) => {
+        const company = params.data?.companyinfo;
+        return (
+          <div className="text-sm text-gray-600 truncate py-2">
+            {company?.address_suburb || '-'}
+          </div>
+        );
+      },
+    },
+    {
+      headerName: 'State_Abbreviation',
+      field: 'companyinfo.address_state',
+      filter: true,
+      sortable: true,
+      width: 80,
+      cellRenderer: (params: any) => {
+        const company = params.data?.companyinfo;
+        return (
+          <div className="text-sm text-gray-600 py-2">
+            {company?.address_state || '-'}
+          </div>
+        );
+      },
+    },
+    {
+      headerName: 'Postcode',
+      field: 'companyinfo.address_postcode',
+      filter: true,
+      sortable: true,
+      width: 90,
+      cellRenderer: (params: any) => {
+        const company = params.data?.companyinfo;
+        return (
+          <div className="text-sm text-gray-600 py-2">
+            {company?.address_postcode || '-'}
           </div>
         );
       },
@@ -150,7 +173,6 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
     {
       headerName: 'Actions',
       width: 100,
-      pinned: 'right',
       cellRenderer: (params: any) => {
         return (
           <button
@@ -254,24 +276,27 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
       )}
 
       {/* AG Grid */}
-      <div className="ag-theme-quartz h-[600px] w-full" style={{ height: '600px', width: '100%' }}>
+      <div className="ag-theme-quartz w-full">
         <AgGridReact
           rowData={items}
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
           onGridReady={onGridReady}
           onSelectionChanged={onSelectionChanged}
-          rowSelection="multiple"
-          suppressRowClickSelection={true}
+          rowSelection={{
+            mode: 'multiRow',
+            headerCheckbox: true,
+            checkboxes: true,
+            enableClickSelection: false
+          }}
           animateRows={true}
-          pagination={true}
-          paginationPageSize={100}
-          enableRangeSelection={true}
-          rowMultiSelectWithClick={false}
+          pagination={false}
           suppressAggFuncInHeader={true}
           enableCellTextSelection={true}
           ensureDomOrder={true}
           loading={false}
+          domLayout="autoHeight"
+          getRowId={(params) => params.data.id}
         />
       </div>
 

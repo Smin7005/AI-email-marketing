@@ -24,7 +24,7 @@
 
 ## 7 Research how to display multi-column table vertically M
 
-## 8.  ✅ Database column analysis:
+## 8. ✅ Database column analysis:
 
 | Group                  | Column Name         | Function / Purpose                                                                   |
 | ---------------------- | ------------------- | ------------------------------------------------------------------------------------ |
@@ -55,13 +55,13 @@
 | 8. Marketing           | 2keywords_list      | SEO and search indexing keywords to improve discoverability.                         |
 | 9. Data Management     | 0last_updated       | Timestamp of the most recent update to the record.                                   |
 
-## ✅ 9. Select leads from different pages: refer to react: redux, not save if jump to other pages (collections, compaigns, etc.). H
+## 9. ✅ Select leads from different pages: refer to react: redux, not save if jump to other pages (collections, compaigns, etc.). H
 
 ## 10. Add a drop box to adjust the number of rows in each page of the list. L
 
 ## 11. Automatically jump to Collections page after 'save to collection' M
 
-## ✅ 12. Delete the black background after click on save to collection. H
+## 12. ✅ Delete the black background after click on save to collection. H
 
 
 ## 14. Update industry filter data, now there are missing industry_name from rawdata_yellowpage table. H
@@ -72,7 +72,7 @@
 
 # Collections
 
-## ✅ 1. Fail to load leads in collection: H
+## 1. ✅ Fail to load leads in collection: H
 
 - Data is stored to collections and collection_items successfully.
 - Error fetching collection items: {
@@ -92,11 +92,11 @@
 
 # Campaigns
 
-## ✅ 1. Duplicated 'Create new campaign' button. H
+## 1. ✅ Duplicated 'Create new campaign' button. H
 
-## ✅ 2. Failed to create campaigns: H
+## 2. ✅ Failed to create campaigns: H
 
-- 1. analyse error logs, check api code.
+- analyse error logs, check api code.
 - campaigns table is empty.
 - Using effective org ID: org_38HGXMk1WUEWxO4aQHf4cBQoROO
   Campaign creation request body: {
@@ -161,7 +161,7 @@
 
 ## 19. ✅ Fix bug at manually add recipients email address. H
 
-## 20. Merge 2 components into a long component, delete total respects, fix the error at process bar. H
+## 20. ✅ Merge 2 components into a long component, delete total respects, fix the error at process bar. H
 
 # Settings 
 
