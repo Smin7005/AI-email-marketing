@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { CampaignForm } from '@/components/campaigns/CampaignForm';
 import { CampaignPreview } from '@/components/campaigns/CampaignPreview';
@@ -19,6 +19,9 @@ import {
 
 export const dynamic = 'force-dynamic';
 
+// SessionStorage key for draft data
+const CAMPAIGN_DRAFT_KEY = 'campaign_draft';
+
 // Type for individual recipient
 interface IndividualRecipient {
   email: string;
@@ -34,6 +37,17 @@ interface SelectedCollection {
   businessNames: string[];
 }
 
+// Type for draft data stored in sessionStorage
+interface CampaignDraft {
+  formData: {
+    name: string;
+    serviceDescription: string;
+    emailTone: string;
+  };
+  selectedCollections: SelectedCollection[];
+  individualRecipients: IndividualRecipient[];
+}
+
 export default function CreateCampaignPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<{
@@ -42,6 +56,13 @@ export default function CreateCampaignPage() {
     emailTone: string;
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Initial form values from sessionStorage
+  const [initialFormValues, setInitialFormValues] = useState<{
+    name: string;
+    serviceDescription: string;
+    emailTone: string;
+  } | undefined>(undefined);
 
   // Collections state
   const [collections, setCollections] = useState<Array<{ id: string; name: string; item_count: number }>>([]);
@@ -55,6 +76,74 @@ export default function CreateCampaignPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newRecipientEmail, setNewRecipientEmail] = useState('');
   const [newRecipientName, setNewRecipientName] = useState('');
+
+  // Track if draft has been loaded
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+
+  // Load draft from sessionStorage on mount
+  useEffect(() => {
+    try {
+      const savedDraft = sessionStorage.getItem(CAMPAIGN_DRAFT_KEY);
+      if (savedDraft) {
+        const draft: CampaignDraft = JSON.parse(savedDraft);
+        if (draft.formData) {
+          setInitialFormValues(draft.formData);
+          setFormData(draft.formData);
+        }
+        if (draft.selectedCollections) {
+          setSelectedCollections(draft.selectedCollections);
+        }
+        if (draft.individualRecipients) {
+          setIndividualRecipients(draft.individualRecipients);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading draft from sessionStorage:', error);
+    }
+    setIsDraftLoaded(true);
+  }, []);
+
+  // Save draft to sessionStorage when state changes
+  const saveDraft = useCallback((
+    currentFormData: { name: string; serviceDescription: string; emailTone: string } | null,
+    currentSelectedCollections: SelectedCollection[],
+    currentIndividualRecipients: IndividualRecipient[]
+  ) => {
+    try {
+      const draft: CampaignDraft = {
+        formData: currentFormData || { name: '', serviceDescription: '', emailTone: '' },
+        selectedCollections: currentSelectedCollections,
+        individualRecipients: currentIndividualRecipients,
+      };
+      sessionStorage.setItem(CAMPAIGN_DRAFT_KEY, JSON.stringify(draft));
+    } catch (error) {
+      console.error('Error saving draft to sessionStorage:', error);
+    }
+  }, []);
+
+  // Save draft when recipients change
+  useEffect(() => {
+    if (isDraftLoaded) {
+      saveDraft(formData, selectedCollections, individualRecipients);
+    }
+  }, [selectedCollections, individualRecipients, isDraftLoaded, saveDraft, formData]);
+
+  // Handle form value changes from CampaignForm
+  const handleFormChange = useCallback((values: { name: string; serviceDescription: string; emailTone: string }) => {
+    setFormData(values);
+    if (isDraftLoaded) {
+      saveDraft(values, selectedCollections, individualRecipients);
+    }
+  }, [isDraftLoaded, saveDraft, selectedCollections, individualRecipients]);
+
+  // Clear draft from sessionStorage
+  const clearDraft = () => {
+    try {
+      sessionStorage.removeItem(CAMPAIGN_DRAFT_KEY);
+    } catch (error) {
+      console.error('Error clearing draft from sessionStorage:', error);
+    }
+  };
 
   useEffect(() => {
     loadCollections();
@@ -209,6 +298,9 @@ export default function CreateCampaignPage() {
       }
 
       const campaign = await response.json();
+
+      // Clear draft from sessionStorage after successful creation
+      clearDraft();
 
       // Redirect to the campaign detail page
       router.push(`/campaigns/${campaign.id}`);
@@ -430,7 +522,12 @@ export default function CreateCampaignPage() {
             <CardTitle>Campaign Details</CardTitle>
           </CardHeader>
           <CardContent>
-            <CampaignForm onSubmit={handleSubmit} isLoading={isSubmitting} />
+            <CampaignForm
+              onSubmit={handleSubmit}
+              isLoading={isSubmitting}
+              initialValues={initialFormValues}
+              onChange={handleFormChange}
+            />
           </CardContent>
         </Card>
 

@@ -144,7 +144,7 @@
 
 ## 9. ✅ Email Generation Error: transfer argument [Your Name], [Your Company] making paragraph. H5
 
-## 10. ✅ Multiple select at Recipients involve both collections and individuals  (manually input email) H 4
+## 10. ✅ Multiple select at Recipients involve both collections and individuals  (manually input email) H4
 
 ## 11. ✅ Check the interval code snippet in src\app\(dashboard)\campaigns\[id]\page.tsx L
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -60,19 +60,29 @@ type FormValues = z.infer<typeof formSchema>;
 interface CampaignFormProps {
   onSubmit: (values: FormValues) => Promise<void> | void;
   isLoading?: boolean;
+  initialValues?: Partial<FormValues>;
+  onChange?: (values: FormValues) => void;
 }
 
-export function CampaignForm({ onSubmit, isLoading = false }: CampaignFormProps) {
-  const [charCount, setCharCount] = useState(0);
+export function CampaignForm({ onSubmit, isLoading = false, initialValues, onChange }: CampaignFormProps) {
+  const [charCount, setCharCount] = useState(initialValues?.serviceDescription?.length || 0);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      serviceDescription: '',
-      emailTone: '',
+      name: initialValues?.name || '',
+      serviceDescription: initialValues?.serviceDescription || '',
+      emailTone: initialValues?.emailTone || '',
     },
   });
+
+  // Watch form values and notify parent of changes
+  const watchedValues = form.watch();
+  useEffect(() => {
+    if (onChange) {
+      onChange(watchedValues);
+    }
+  }, [watchedValues, onChange]);
 
   const handleSubmit = async (values: FormValues) => {
     await onSubmit(values);
