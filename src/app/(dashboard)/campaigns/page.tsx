@@ -101,7 +101,7 @@ export default function CampaignsPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/campaigns/create">
+          <Link href="/campaigns/create?new=true">
             <Plus className="w-4 h-4 mr-2" />
             Create New Campaign
           </Link>

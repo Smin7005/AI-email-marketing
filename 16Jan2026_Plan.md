@@ -65,6 +65,8 @@
 
 
 ## 14. Update industry filter data, now there are missing industry_name from rawdata_yellowpage table. H
+ - compare the number of category_name and industry_name.
+ - new column, summary of current filter: maxmum: 14
 
 ## 15. Update city name auto complete. M
 
@@ -88,7 +90,7 @@
 
 ## 3. Refine collection list display layout L
 
-## 4. Update the layout of each collections, match to Leads page. H
+## 4. ✅ Update the layout of each collections, match to Leads page. H
 
 # Campaigns
 
@@ -157,7 +159,7 @@
 ## 16. ✅ Find out the meaning of Total Prospects. H
        - A: how many businesses or contacts will receive emails from this campaign.
 
-## 18. Display email content as normal HTML format in email preview. H
+## 18. ✅ Display email content as normal HTML format in email preview. H
 
 ## 19. ✅ Fix bug at manually add recipients email address. H
 

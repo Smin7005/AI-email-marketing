@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CampaignForm } from '@/components/campaigns/CampaignForm';
 import { CampaignPreview } from '@/components/campaigns/CampaignPreview';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,6 +50,9 @@ interface CampaignDraft {
 
 export default function CreateCampaignPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isNewCampaign = searchParams.get('new') === 'true';
+
   const [formData, setFormData] = useState<{
     name: string;
     serviceDescription: string;
@@ -80,8 +83,20 @@ export default function CreateCampaignPage() {
   // Track if draft has been loaded
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
 
-  // Load draft from sessionStorage on mount
+  // Load draft from sessionStorage on mount (unless starting a new campaign)
   useEffect(() => {
+    // If user clicked "Create New Campaign" button, clear any existing draft
+    if (isNewCampaign) {
+      try {
+        sessionStorage.removeItem(CAMPAIGN_DRAFT_KEY);
+      } catch (error) {
+        console.error('Error clearing draft from sessionStorage:', error);
+      }
+      setIsDraftLoaded(true);
+      return;
+    }
+
+    // Otherwise, try to load existing draft
     try {
       const savedDraft = sessionStorage.getItem(CAMPAIGN_DRAFT_KEY);
       if (savedDraft) {
@@ -101,7 +116,7 @@ export default function CreateCampaignPage() {
       console.error('Error loading draft from sessionStorage:', error);
     }
     setIsDraftLoaded(true);
-  }, []);
+  }, [isNewCampaign]);
 
   // Save draft to sessionStorage when state changes
   const saveDraft = useCallback((
@@ -299,8 +314,8 @@ export default function CreateCampaignPage() {
 
       const campaign = await response.json();
 
-      // Clear draft from sessionStorage after successful creation
-      clearDraft();
+      // Don't clear draft here - user may want to go back and modify
+      // Draft will be cleared when user navigates to campaigns list or creates a new campaign
 
       // Redirect to the campaign detail page
       router.push(`/campaigns/${campaign.id}`);

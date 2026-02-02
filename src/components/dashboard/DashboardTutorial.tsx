@@ -51,7 +51,7 @@ export default function DashboardTutorial() {
 
       {/* CTA Button */}
       <div className="mt-8 flex justify-end">
-        <Link href="/campaigns/create">
+        <Link href="/campaigns/create?new=true">
           <Button className="w-full sm:w-auto">
             Create Campaign
             <ArrowRight className="w-4 h-4 ml-2" />
