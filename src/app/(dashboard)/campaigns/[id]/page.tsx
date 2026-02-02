@@ -482,9 +482,12 @@ export default function CampaignDetailPage() {
                       <div className="mb-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
                         Email Content Preview
                       </div>
-                      <div className="p-4 bg-white border border-gray-200 rounded shadow-sm font-mono whitespace-pre-wrap text-sm text-gray-800 min-h-[100px]">
-                        {item.emailContent || '⚠️ Content appears to be empty, but data was loaded.'}
-                      </div>
+                      <div
+                        className="p-4 bg-white border border-gray-200 rounded shadow-sm text-sm text-gray-800 min-h-[100px]"
+                        dangerouslySetInnerHTML={{
+                          __html: item.emailContent || '<span class="text-gray-400">No content available</span>'
+                        }}
+                      />
                       <div className="mt-4 flex justify-end">
                         <Button
                           size="sm"
