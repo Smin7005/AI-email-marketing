@@ -76,13 +76,21 @@ export function CampaignForm({ onSubmit, isLoading = false, initialValues, onCha
     },
   });
 
-  // Watch form values and notify parent of changes
-  const watchedValues = form.watch();
+  // Watch individual form fields to avoid creating new object references
+  const watchedName = form.watch('name');
+  const watchedServiceDescription = form.watch('serviceDescription');
+  const watchedEmailTone = form.watch('emailTone');
+
+  // Notify parent of changes using watched values
   useEffect(() => {
     if (onChange) {
-      onChange(watchedValues);
+      onChange({
+        name: watchedName,
+        serviceDescription: watchedServiceDescription,
+        emailTone: watchedEmailTone,
+      });
     }
-  }, [watchedValues, onChange]);
+  }, [watchedName, watchedServiceDescription, watchedEmailTone, onChange]);
 
   const handleSubmit = async (values: FormValues) => {
     await onSubmit(values);

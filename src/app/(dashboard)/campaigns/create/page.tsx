@@ -522,12 +522,18 @@ export default function CreateCampaignPage() {
             <CardTitle>Campaign Details</CardTitle>
           </CardHeader>
           <CardContent>
-            <CampaignForm
-              onSubmit={handleSubmit}
-              isLoading={isSubmitting}
-              initialValues={initialFormValues}
-              onChange={handleFormChange}
-            />
+            {isDraftLoaded ? (
+              <CampaignForm
+                onSubmit={handleSubmit}
+                isLoading={isSubmitting}
+                initialValues={initialFormValues}
+                onChange={handleFormChange}
+              />
+            ) : (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              </div>
+            )}
           </CardContent>
         </Card>
 
