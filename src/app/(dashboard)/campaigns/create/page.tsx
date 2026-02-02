@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CampaignForm } from '@/components/campaigns/CampaignForm';
 import { CampaignPreview } from '@/components/campaigns/CampaignPreview';
@@ -48,7 +48,7 @@ interface CampaignDraft {
   individualRecipients: IndividualRecipient[];
 }
 
-export default function CreateCampaignPage() {
+function CreateCampaignContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isNewCampaign = searchParams.get('new') === 'true';
@@ -598,5 +598,25 @@ export default function CreateCampaignPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading fallback for Suspense
+function CreateCampaignLoading() {
+  return (
+    <div className="container mx-auto py-8 px-4 max-w-6xl">
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    </div>
+  );
+}
+
+// Wrap in Suspense boundary for useSearchParams
+export default function CreateCampaignPage() {
+  return (
+    <Suspense fallback={<CreateCampaignLoading />}>
+      <CreateCampaignContent />
+    </Suspense>
   );
 }
