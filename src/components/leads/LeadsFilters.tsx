@@ -83,14 +83,24 @@ export default function LeadsFilters() {
     return () => clearTimeout(timeoutId);
   }, [searchValue, cityValue, industryValue, pathname, router]);
 
-  const industries = [
-    { value: 'all', label: 'All Industries' },
-    { value: 'Accountants & Auditors', label: 'Accountants & Auditors' },
-    { value: 'Lawyers & Solicitors', label: 'Lawyers & Solicitors' },
-    { value: 'Butchers Shop', label: 'Butchers Shop' },
-    { value: 'Supermarkets & Grocery Stores', label: 'Supermarkets & Grocery Stores' },
-    { value: 'Builders & Building Contractors', label: 'Builders & Building Contractors' },
-    { value: 'Air Conditioning Installation & Service', label: 'Air Conditioning Installation & Service' },
+  const categoryGroups = [
+    { value: 'all', label: 'All Categories' },
+    { value: 'Trades & Home Services', label: 'Trades & Home Services' },
+    { value: 'Healthcare & Medical', label: 'Healthcare & Medical' },
+    { value: 'Food & Hospitality', label: 'Food & Hospitality' },
+    { value: 'Entertainment & Recreation', label: 'Entertainment & Recreation' },
+    { value: 'Automotive', label: 'Automotive' },
+    { value: 'Construction & Building', label: 'Construction & Building' },
+    { value: 'Allied Health & Wellness', label: 'Allied Health & Wellness' },
+    { value: 'Retail & Shopping', label: 'Retail & Shopping' },
+    { value: 'Beauty & Personal Care', label: 'Beauty & Personal Care' },
+    { value: 'Transport & Logistics', label: 'Transport & Logistics' },
+    { value: 'Professional Services', label: 'Professional Services' },
+    { value: 'Industrial & Manufacturing', label: 'Industrial & Manufacturing' },
+    { value: 'Education & Training', label: 'Education & Training' },
+    { value: 'Agriculture & Rural', label: 'Agriculture & Rural' },
+    { value: 'Real Estate & Property', label: 'Real Estate & Property' },
+    { value: 'Other', label: 'Other' },
   ];
 
   return (
@@ -127,9 +137,9 @@ export default function LeadsFilters() {
           onChange={(e) => setIndustryValue(e.target.value)}
           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
         >
-          {industries.map((industry) => (
-            <option key={industry.value} value={industry.value}>
-              {industry.label}
+          {categoryGroups.map((group) => (
+            <option key={group.value} value={group.value}>
+              {group.label}
             </option>
           ))}
         </select>

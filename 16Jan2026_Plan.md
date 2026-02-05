@@ -66,7 +66,7 @@
 
 ## 14. Update industry filter data, now there are missing industry_name from rawdata_yellowpage table. H
  - compare the number of category_name and industry_name.
- - new column, summary of current filter: maxmum: 14
+ - new column, summary of current filter: maxmum: 15
 
 ## 15. Update city name auto complete. M
 

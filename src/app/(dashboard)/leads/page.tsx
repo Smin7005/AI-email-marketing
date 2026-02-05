@@ -7,6 +7,7 @@ interface Company {
   listing_id: string;
   company_name: string;
   category_name: string | null;
+  category_group: string | null;
   email: string | null;
   phone_number: string | null;
   address_suburb: string | null;
@@ -30,7 +31,7 @@ async function getLeads(
   // Force no cache on the query
   let query = supabase
     .from('rawdata_yellowpage_new')
-    .select('listing_id, company_name, category_name, email, phone_number, address_suburb, address_state, address_postcode', { count: 'exact' });
+    .select('listing_id, company_name, category_name, category_group, email, phone_number, address_suburb, address_state, address_postcode', { count: 'exact' });
 
   // Apply search query filter (company_name)
   if (searchQuery && searchQuery.trim()) {
@@ -44,9 +45,9 @@ async function getLeads(
     query = query.ilike('address_suburb', cityTerm);
   }
 
-  // Apply industry filter (exact match on category_name)
+  // Apply category group filter (exact match on category_group)
   if (industryQuery && industryQuery.trim() && industryQuery !== 'all') {
-    query = query.eq('category_name', industryQuery.trim());
+    query = query.eq('category_group', industryQuery.trim());
   }
 
   // Apply pagination
@@ -87,7 +88,7 @@ export default async function LeadsPage({
   const activeFilters: string[] = [];
   if (searchQuery) activeFilters.push(`Name: "${searchQuery}"`);
   if (cityQuery) activeFilters.push(`City: "${cityQuery}"`);
-  if (industryQuery && industryQuery !== 'all') activeFilters.push(`Industry: "${industryQuery}"`);
+  if (industryQuery && industryQuery !== 'all') activeFilters.push(`Category: "${industryQuery}"`);
 
   return (
     <div className="space-y-6">
