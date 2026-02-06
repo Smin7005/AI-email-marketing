@@ -64,7 +64,7 @@
 ## 12. ✅ Delete the black background after click on save to collection. H
 
 
-## 14. Update industry filter data, now there are missing industry_name from rawdata_yellowpage table. H
+## 14. ✅ Update industry filter data, now there are missing industry_name from rawdata_yellowpage table. H
  - compare the number of category_name and industry_name.
  - new column, summary of current filter: maxmum: 15
 
@@ -154,7 +154,7 @@
 
 ## 13. ✅ Push to Vercel server by MCP.  H2
 
-## 15. Save inputs before email generation. M
+## 15. ✅ Save inputs before email generation. M
 
 ## 16. ✅ Find out the meaning of Total Prospects. H
        - A: how many businesses or contacts will receive emails from this campaign.
@@ -165,10 +165,12 @@
 
 ## 20. ✅ Merge 2 components into a long component, delete total respects, fix the error at process bar. H
 
+## 21. Check the content of each email is legal or not before sending, sensetive content alert. M
+
 # Settings 
 
-## 1. Research Multi-tenant user domain verfication solution. M
-
+## 1. ✅ Research Multi-tenant user domain solution. H
+      - AWS SES
 ## 2. ✅ Verify domain name on Resend. H
 
 # Entire Website
@@ -178,3 +180,18 @@
 ## 2. Check the bugs at vercel deployments between my account and company's account. M
 
 ## 3. ✅ Change the domain name of email sending. H
+
+## 4. ✅ Manually try the work flow of AWS SES. H
+
+## Implementation of multi-tenant email sending by AWS SES, 4 stages in total: 
+ - 1. Allow user to input required DNS details. H
+    1.1 At the bottom side of analyse, create a new page which is Domains.
+    1.2 Similar to Resend
+    1.3 Onboarding flow : 
+      1.3.1 Header: Which email address you prefer to use?
+      1.3.2: Email address with a input element.
+      1.3.3: Add Sender, button element
+      1.3.4: get TXT values from AWS SES, display at DNS records 
+ - 2. Verification of users' inputs. H
+ - 3. Sending emails via AWS SES. H
+ - 4. User management, such as restriction of adding domain names for free users. M

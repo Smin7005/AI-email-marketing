@@ -183,6 +183,9 @@ export type NewCollection = typeof collections.$inferInsert;
 export type CollectionItem = typeof collectionItems.$inferSelect;
 export type NewCollectionItem = typeof collectionItems.$inferInsert;
 
+export type Sender = typeof senders.$inferSelect;
+export type NewSender = typeof senders.$inferInsert;
+
 // User collections table (stores user's saved lead collections)
 export const collections = pgTable('collections', {
   id: serial('id').primaryKey(),
@@ -204,6 +207,29 @@ export const collectionItems = pgTable('collection_items', {
   collectionIdx: index('collection_items_collection_id_idx').on(table.collectionId),
   businessIdx: index('collection_items_business_id_idx').on(table.businessId),
   uniqueItem: unique('collection_items_unique_item').on(table.collectionId, table.businessId),
+}));
+
+// Senders table for AWS SES email verification (tenant-scoped)
+export const senders = pgTable('senders', {
+  id: serial('id').primaryKey(),
+  organizationId: varchar('organization_id').notNull(), // Tenant isolation
+  emailAddress: varchar('email_address', { length: 255 }).notNull(),
+  domain: varchar('domain', { length: 255 }).notNull(), // Extracted from email address
+  verificationStatus: varchar('verification_status', { length: 50 }).default('pending').notNull(), // pending, verifying, verified, failed
+  verificationToken: varchar('verification_token', { length: 255 }), // AWS SES domain verification token
+  dkimTokens: jsonb('dkim_tokens').$type<string[]>(), // Array of 3 DKIM tokens from AWS SES
+  dkimStatus: varchar('dkim_status', { length: 50 }).default('pending'), // pending, success, failed, not_started
+  isDefault: boolean('is_default').default(false),
+  lastVerifiedAt: timestamp('last_verified_at'),
+  verificationError: text('verification_error'),
+  configurationSetName: varchar('configuration_set_name', { length: 255 }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  orgIdx: index('senders_organization_id_idx').on(table.organizationId),
+  emailIdx: index('senders_email_address_idx').on(table.emailAddress),
+  domainIdx: index('senders_domain_idx').on(table.domain),
+  uniqueEmailPerOrg: unique('senders_unique_email_per_org').on(table.organizationId, table.emailAddress),
 }));
 
 // Export enums for status fields
@@ -237,4 +263,18 @@ export const SUPPRESSION_TYPE = {
   UNSUBSCRIBED: 'unsubscribed',
   BOUNCED: 'bounced',
   COMPLAINED: 'complained',
+} as const;
+
+export const SENDER_VERIFICATION_STATUS = {
+  PENDING: 'pending',
+  VERIFYING: 'verifying',
+  VERIFIED: 'verified',
+  FAILED: 'failed',
+} as const;
+
+export const SENDER_DKIM_STATUS = {
+  PENDING: 'pending',
+  SUCCESS: 'success',
+  FAILED: 'failed',
+  NOT_STARTED: 'not_started',
 } as const;

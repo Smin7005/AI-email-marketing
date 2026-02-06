@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ClerkProvider } from '@clerk/nextjs'
 import { QueryProvider } from '@/components/providers/query-provider';
 import { ReduxProvider } from '@/components/providers/redux-provider';
+import { Toaster } from 'sonner';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import 'react-calendar/dist/Calendar.css';
@@ -28,6 +29,7 @@ export default function RootLayout({
           <html lang="en">
             <body className="antialiased">
               {children}
+              <Toaster position="top-right" richColors />
             </body>
           </html>
         </QueryProvider>
