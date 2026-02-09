@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, Folder, Mail, BarChart2, Settings, Users } from 'lucide-react';
+import { Search, Folder, Mail, BarChart2, Settings, Send } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +27,12 @@ export default function Sidebar() {
       label: 'Campaigns',
       icon: Mail,
       active: pathname?.startsWith('/campaigns'),
+    },
+    {
+      href: '/senders',
+      label: 'Senders',
+      icon: Send,
+      active: pathname?.startsWith('/senders'),
     },
     {
       href: '/analytics',

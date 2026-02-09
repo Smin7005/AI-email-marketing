@@ -1,11 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Mail } from 'lucide-react';
 
 interface AnalyticsSummary {
   totalCampaigns: number;
@@ -39,7 +36,6 @@ interface Activity {
 }
 
 export default function AnalyticsPage() {
-  const router = useRouter();
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignAnalytics[]>([]);
   const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
@@ -298,25 +294,6 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      {/* Senders Management */}
-      <div className="mt-8">
-        <Card>
-          <CardContent className="flex items-center justify-between py-6">
-            <div className="flex items-center gap-3">
-              <Mail className="h-6 w-6 text-muted-foreground" />
-              <div>
-                <h3 className="font-medium">Manage Senders</h3>
-                <p className="text-sm text-muted-foreground">
-                  Configure email addresses for sending campaigns via AWS SES
-                </p>
-              </div>
-            </div>
-            <Button onClick={() => router.push('/senders')}>
-              Go to Senders
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }
