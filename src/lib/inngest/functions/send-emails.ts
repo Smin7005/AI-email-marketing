@@ -1,6 +1,8 @@
 import { inngest } from '../client';
 import { getCompanyDbClient } from '../../db/supabase';
 import { emailService } from '../../services/email';
+import { sesService } from '../../email/ses';
+import { senderVerificationService } from '../../services/sender-verification';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.CLERK_SECRET_KEY || 'fallback-secret';
@@ -320,19 +322,30 @@ export const sendCampaignBatch = inngest.createFunction(
       return Array.from(suppressedSet);
     });
 
-    // Send emails with rate limiting (sequential to avoid 429 errors)
+    // Look up verified SES sender for this organization
+    const verifiedSender = await step.run('lookup-verified-sender', async () => {
+      const sender = await senderVerificationService.getVerifiedSender(organizationId);
+      if (sender) {
+        console.log('[SendEmails] Found verified SES sender:', sender.emailAddress);
+        return { email: sender.emailAddress, domain: sender.domain };
+      }
+      console.log('[SendEmails] No verified SES sender found, will fall back to Resend');
+      return null;
+    });
+
+    // Send emails with rate limiting
     const results = await step.run('send-emails', async () => {
       console.log('[SendEmails] Starting to send', emails.length, 'emails');
       console.log('[SendEmails] Suppressed emails list:', suppressedEmails);
 
-      // Always use FROM_EMAIL from environment at send time (not stored campaign value)
-      const senderEmail = process.env.FROM_EMAIL || 'onboarding@resend.dev';
       const senderName = campaign.name || 'Campaign';
+      const senderEmail = verifiedSender?.email || process.env.FROM_EMAIL || 'onboarding@resend.dev';
+      const useSES = !!verifiedSender;
 
       console.log('[SendEmails] Sender info:', {
         sender_name: senderName,
         sender_email: senderEmail,
-        from: `${senderName} <${senderEmail}>`,
+        provider: useSES ? 'AWS SES' : 'Resend',
       });
 
       const sendResults: Array<{
@@ -342,11 +355,10 @@ export const sendCampaignBatch = inngest.createFunction(
         error: string | null;
       }> = [];
 
-      // Send emails sequentially with delay to respect Resend rate limit (2 req/sec)
       for (const email of emails) {
         console.log('[SendEmails] Processing email for:', email.businessEmail);
 
-        // Check if suppressed (using Array.includes instead of Set.has)
+        // Check if suppressed
         if (email.businessEmail && suppressedEmails.includes(email.businessEmail.toLowerCase())) {
           console.log('[SendEmails] Email suppressed:', email.businessEmail);
           sendResults.push({
@@ -369,31 +381,49 @@ export const sendCampaignBatch = inngest.createFunction(
             unsubscribeUrl
           );
 
-          // Send via Resend - always use FROM_EMAIL from environment
-          const fromAddress = `${senderName} <${senderEmail}>`;
-          console.log('[SendEmails] Sending email with from:', fromAddress, 'to:', email.businessEmail);
+          let messageId: string | null = null;
 
-          const result = await emailService.sendEmail({
-            from: fromAddress,
-            to: email.businessEmail!,
-            subject: email.emailSubject || 'No Subject',
-            html: emailContent,
-            tags: [
-              { name: 'campaign', value: campaign.id.toString() },
-              { name: 'organization', value: organizationId },
-            ],
-          });
-
-          console.log('[SendEmails] Email result:', result);
-
-          if (result.error) {
-            throw new Error(result.error);
+          if (useSES) {
+            // Send via AWS SES
+            console.log('[SendEmails] Sending via AWS SES from:', senderEmail, 'to:', email.businessEmail);
+            const result = await sesService.sendEmail({
+              from: senderEmail,
+              fromName: senderName,
+              to: email.businessEmail!,
+              subject: email.emailSubject || 'No Subject',
+              html: emailContent,
+              tags: {
+                campaign: campaign.id.toString(),
+                organization: organizationId,
+              },
+            });
+            messageId = result.messageId;
+          } else {
+            // Fallback: Send via Resend
+            const fromAddress = `${senderName} <${senderEmail}>`;
+            console.log('[SendEmails] Sending via Resend from:', fromAddress, 'to:', email.businessEmail);
+            const result = await emailService.sendEmail({
+              from: fromAddress,
+              to: email.businessEmail!,
+              subject: email.emailSubject || 'No Subject',
+              html: emailContent,
+              tags: [
+                { name: 'campaign', value: campaign.id.toString() },
+                { name: 'organization', value: organizationId },
+              ],
+            });
+            if (result.error) {
+              throw new Error(result.error);
+            }
+            messageId = result.id;
           }
+
+          console.log('[SendEmails] Email sent, messageId:', messageId);
 
           sendResults.push({
             itemId: email.itemId,
             status: 'sent',
-            messageId: result.id,
+            messageId,
             error: null,
           });
         } catch (error) {
@@ -406,8 +436,8 @@ export const sendCampaignBatch = inngest.createFunction(
           });
         }
 
-        // Wait 600ms between emails to stay under 2 req/sec rate limit
-        await new Promise(resolve => setTimeout(resolve, 600));
+        // Rate limit delay: SES allows ~14/sec, Resend allows ~2/sec
+        await new Promise(resolve => setTimeout(resolve, useSES ? 100 : 600));
       }
 
       return sendResults;
