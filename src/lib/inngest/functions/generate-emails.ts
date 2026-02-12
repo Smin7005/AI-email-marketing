@@ -47,13 +47,13 @@ TONE: ${toneInstructions[tone] || toneInstructions.professional}
 STRICT Instructions:
 1. First line MUST be ONLY the subject (no "Subject:" prefix)
 2. Second line MUST be empty
-3. Write 2-3 SHORT paragraphs (each 2-3 sentences max)
+3. Write 2-4 SHORT paragraphs 
 4. Separate each paragraph with a blank line
 5. Include a clear call-to-action
 6. End with blank line, then "Best regards," then sender name on new line
 7. NEVER use placeholders like [Your Name], [Your Company], [Contact Info], [Recipient's Name]
 8. Use the actual business name "${businessName}" when addressing them
-9. Total length: from 200 words, 500 words maximum
+9. Total length: about 300 words.
 10. Avoids spam trigger words
 
 EXACT Output format (follow this exactly):
@@ -196,7 +196,7 @@ async function generateEmailWithRetry(
  */
 export const batchGenerateEmails = inngest.createFunction(
   {
-    id: 'batch-generate-emails',
+    id: 'generate-emails',
     name: 'Batch Generate Campaign Emails',
     retries: 3,
     concurrency: 5,
