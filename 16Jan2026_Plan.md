@@ -171,6 +171,12 @@
 
 ## 1 Repalce action menu to 2 buttons element, 'Verify' and 'Delete' for each row of table. H
 
+# 12FEB2026 
+
+ ## ✅ 1. Replace 'Your company' to 'Campaign Name'. H
+ ##  2. Replace email sending API from Resend to AWS SES. H
+ ##  3. loading bar not working while generating emails. H 
+
 # Settings 
 
 ## 1. ✅ Research Multi-tenant user domain solution. H
@@ -188,7 +194,7 @@
 ## 4. ✅ Manually try the work flow of AWS SES. H
 
 ## Implementation of multi-tenant email sending by AWS SES, 4 stages in total: 
- - 1. Allow user to input required DNS details. H
+ - ✅ 1. Allow user to input required DNS details. H 
     1.1 At the bottom side of analyse, create a new page which is Domains.
     1.2 Similar to Resend
     1.3 Onboarding flow : 
@@ -196,10 +202,8 @@
       1.3.2: Email address with a input element.
       1.3.3: Add Sender, button element
       1.3.4: get TXT values from AWS SES, display at DNS records 
- - 2. Verification of users' inputs. H
+ - ✅ 2. Verification of users' inputs. H
  - 3. Sending emails via AWS SES. H
- - 4. User management, such as restriction of adding domain names for free users. M
+ - ✅ 4. User management, such as restriction of adding domain names for free users. M
 
- # 12FEB2026 
- ## 1. Replace 'Your company' to 'Campaign Name'. H
- ## 2. Replace email sending API from Resend to AWS SES. H
+ 
