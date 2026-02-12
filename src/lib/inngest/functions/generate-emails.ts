@@ -49,7 +49,7 @@ TASK: Write a personalized cold email that:
 2. Shows you understand their business and industry
 3. Clearly explains how your service can help them
 4. Includes a soft call-to-action
-5. Keeps it concise (under 400 words)
+5. Keeps it concise (around 400 words)
 6. Avoids spam trigger words
 
 FORMAT YOUR RESPONSE AS:
@@ -254,7 +254,7 @@ export const batchGenerateEmails = inngest.createFunction(
           businessIndustry: business?.category_name || 'Business Services',
           businessEmail: business?.email || metadata?.email,
           campaignServiceDescription: campaign.service_description,
-          campaignSenderName: campaign.sender_name,
+          campaignSenderName: campaign.name,
           campaignTone: campaign.tone,
         };
       });
