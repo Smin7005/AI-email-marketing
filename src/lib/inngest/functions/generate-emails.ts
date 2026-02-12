@@ -44,22 +44,57 @@ YOUR SERVICE:
 
 TONE: ${toneInstructions[tone] || toneInstructions.professional}
 
-TASK: Write a personalized cold email that:
-1. Opens with a compelling subject line
-2. Shows you understand their business and industry
-3. Clearly explains how your service can help them
-4. Includes a soft call-to-action
-5. Keeps it concise (under 400 words)
-6. Avoids spam trigger words
+STRICT Instructions:
+1. First line MUST be ONLY the subject (no "Subject:" prefix)
+2. Second line MUST be empty
+3. Write 2-4 SHORT paragraphs 
+4. Separate each paragraph with a blank line
+5. Include a clear call-to-action
+6. End with blank line, then "Best regards," then sender name on new line
+7. NEVER use placeholders like [Your Name], [Your Company], [Contact Info], [Recipient's Name]
+8. Use the actual business name "${businessName}" when addressing them
+9. Total length: about 300 words.
+10. Avoids spam trigger words
 
-FORMAT YOUR RESPONSE AS:
-Subject: [Your compelling subject line]
+EXACT Output format (follow this exactly):
+Compelling Subject Line Here
 
-[Email body paragraph 1 - Personalization and hook]
+Dear ${businessName} Team,
 
-[Email body paragraph 2 - Value proposition]
+First paragraph with greeting and hook.
 
-[Email body paragraph 3 - Soft CTA and close]`;
+Second paragraph with value proposition.
+
+Third paragraph with call-to-action.
+
+Best regards,
+${senderName}`;
+}
+
+/**
+ * Clean up AI-generated placeholders and convert to HTML
+ */
+function cleanAndFormatEmail(body: string, senderName: string, businessName: string): string {
+  // Remove any remaining placeholders
+  let cleaned = body
+    .replace(/\[Your Name\]/gi, senderName)
+    .replace(/\[Your Company\]/gi, senderName)
+    .replace(/\[Your Company Name\]/gi, senderName)
+    .replace(/\[Your Phone Number\]/gi, '')
+    .replace(/\[Your Email Address\]/gi, '')
+    .replace(/\[Your Email\]/gi, '')
+    .replace(/\[Your Contact Information\]/gi, '')
+    .replace(/\[Contact Info\]/gi, '')
+    .replace(/\[Your Position\]/gi, '')
+    .replace(/\[Your Website\]/gi, '')
+    .replace(/\[Recipient's Name\]/gi, businessName)
+    .trim();
+
+  // Convert plain text to HTML with proper paragraph formatting
+  const paragraphs = cleaned.split(/\n\s*\n/).filter(p => p.trim());
+  return paragraphs
+    .map(p => `<p style="margin-bottom: 16px;">${p.replace(/\n/g, '<br>')}</p>`)
+    .join('\n');
 }
 
 /**
@@ -161,7 +196,7 @@ async function generateEmailWithRetry(
  */
 export const batchGenerateEmails = inngest.createFunction(
   {
-    id: 'batch-generate-emails',
+    id: 'generate-emails',
     name: 'Batch Generate Campaign Emails',
     retries: 3,
     concurrency: 5,
@@ -254,7 +289,7 @@ export const batchGenerateEmails = inngest.createFunction(
           businessIndustry: business?.category_name || 'Business Services',
           businessEmail: business?.email || metadata?.email,
           campaignServiceDescription: campaign.service_description,
-          campaignSenderName: campaign.sender_name,
+          campaignSenderName: campaign.name,
           campaignTone: campaign.tone,
         };
       });
@@ -293,12 +328,15 @@ export const batchGenerateEmails = inngest.createFunction(
 
             const { subject, content } = await generateEmailWithRetry(prompt);
 
+            // Clean up placeholders and convert to HTML
+            const htmlContent = cleanAndFormatEmail(content, item.campaignSenderName, item.businessName);
+
             // Update campaign item with generated content
             const { error } = await supabase
               .from('campaign_items')
               .update({
                 email_subject: subject,
-                email_content: content,
+                email_content: htmlContent,
                 status: 'generated',
                 updated_at: new Date().toISOString(),
               })

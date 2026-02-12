@@ -3,12 +3,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -18,7 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, Trash2, RefreshCw, Star, Loader2, Globe } from 'lucide-react';
+import { Trash2, RefreshCw, Star, Loader2, Globe } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Sender {
@@ -180,40 +174,42 @@ export function SenderTable({
                   {formatDate(sender.createdAt)}
                 </td>
                 <td className="py-3 px-4 text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                  <div className="flex items-center justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Check Verification"
+                      disabled={actionLoading === sender.id}
+                      onClick={() => handleVerify(sender.id)}
+                    >
+                      {actionLoading === sender.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                    </Button>
+                    {sender.verificationStatus === 'verified' && (
                       <Button
                         variant="ghost"
-                        size="sm"
-                        disabled={actionLoading === sender.id}
+                        size="icon"
+                        title={sender.isDefault ? "Default Sender" : "Set as Default"}
+                        disabled={sender.isDefault || actionLoading === sender.id}
+                        onClick={() => handleSetDefault(sender.id)}
                       >
-                        {actionLoading === sender.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <MoreHorizontal className="h-4 w-4" />
-                        )}
+                        <Star className={`h-4 w-4 ${sender.isDefault ? 'fill-blue-500 text-blue-500' : ''}`} />
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleVerify(sender.id)}>
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        Check Verification
-                      </DropdownMenuItem>
-                      {sender.verificationStatus === 'verified' && !sender.isDefault && (
-                        <DropdownMenuItem onClick={() => handleSetDefault(sender.id)}>
-                          <Star className="mr-2 h-4 w-4" />
-                          Set as Default
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={() => setDeleteId(sender.id)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Delete"
+                      className="hover:text-red-600"
+                      disabled={actionLoading === sender.id}
+                      onClick={() => setDeleteId(sender.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
