@@ -188,15 +188,15 @@ export function SenderTable({
                         <RefreshCw className="h-4 w-4" />
                       )}
                     </Button>
-                    {sender.verificationStatus === 'verified' && !sender.isDefault && (
+                    {sender.verificationStatus === 'verified' && (
                       <Button
                         variant="ghost"
                         size="icon"
-                        title="Set as Default"
-                        disabled={actionLoading === sender.id}
+                        title={sender.isDefault ? "Default Sender" : "Set as Default"}
+                        disabled={sender.isDefault || actionLoading === sender.id}
                         onClick={() => handleSetDefault(sender.id)}
                       >
-                        <Star className="h-4 w-4" />
+                        <Star className={`h-4 w-4 ${sender.isDefault ? 'fill-blue-500 text-blue-500' : ''}`} />
                       </Button>
                     )}
                     <Button
