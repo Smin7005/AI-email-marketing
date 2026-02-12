@@ -2,15 +2,14 @@ import { inngest } from '@/lib/inngest/client';
 import { serve } from 'inngest/next';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Import Inngest functions
-import { generateEmails } from '@/inngest/functions/generate-emails';
-import { sendCampaignBatch } from '@/lib/inngest/functions/send-emails';
+// Import Inngest functions from consolidated location
+import { batchGenerateEmails, sendCampaignBatch } from '@/lib/inngest/functions';
 
 // Create an API that serves Inngest functions
 const handler = serve({
   client: inngest,
   functions: [
-    generateEmails,
+    batchGenerateEmails,
     sendCampaignBatch,
   ],
 });

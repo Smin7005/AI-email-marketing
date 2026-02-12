@@ -327,7 +327,7 @@ export const sendCampaignBatch = inngest.createFunction(
 
       // Always use FROM_EMAIL from environment at send time (not stored campaign value)
       const senderEmail = process.env.FROM_EMAIL || 'onboarding@resend.dev';
-      const senderName = campaign.sender_name || 'Campaign';
+      const senderName = campaign.name || 'Campaign';
 
       console.log('[SendEmails] Sender info:', {
         sender_name: senderName,
