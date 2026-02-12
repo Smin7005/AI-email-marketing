@@ -1,4 +1,4 @@
-# vercel domains: https://ai-email-marketing-test.vercel.app/
+# vercel domains: https://ai-email-marketing.vercel.app/
 
 # responsive designing
 
@@ -167,6 +167,10 @@
 
 ## 21. Check the content of each email is legal or not before sending, sensetive content alert. M
 
+# Senders
+
+## 1 Repalce action menu to 2 buttons element, 'Verify' and 'Delete' for each row of table. H
+
 # Settings 
 
 ## 1. ✅ Research Multi-tenant user domain solution. H
@@ -195,3 +199,7 @@
  - 2. Verification of users' inputs. H
  - 3. Sending emails via AWS SES. H
  - 4. User management, such as restriction of adding domain names for free users. M
+
+ # 12FEB2026 
+ ## 1. Replace 'Your company' to 'Campaign Name'. H
+ ## 2. Replace email sending API from Resend to AWS SES. H
