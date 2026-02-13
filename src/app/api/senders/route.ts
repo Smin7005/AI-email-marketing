@@ -26,6 +26,9 @@ export async function GET(request: NextRequest) {
 
     const effectiveOrgId = session.orgId || session.userId || 'personal-workspace';
 
+    // Ensure the org has the default sender (lazy initialization for new orgs)
+    await senderVerificationService.ensureDefaultSender(effectiveOrgId);
+
     const senders = await senderVerificationService.listSenders(effectiveOrgId);
 
     return NextResponse.json({

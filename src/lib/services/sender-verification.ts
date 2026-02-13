@@ -32,12 +32,58 @@ export interface AddSenderResult {
   dnsRecords: DnsRecord[];
 }
 
+// Default sender that all new organizations get automatically
+const DEFAULT_SENDER_EMAIL = 'hello@mail-marketing.online';
+const DEFAULT_SENDER_DOMAIN = 'mail-marketing.online';
+
 export class SenderVerificationService {
   private ses: SESService;
   private readonly MAX_PENDING_PER_ORG = 5;
 
   constructor(sesService?: SESService) {
     this.ses = sesService || new SESService();
+  }
+
+  /**
+   * Ensure the organization has the default sender (hello@mail-marketing.online).
+   * This is called lazily when listing senders - if the org has zero senders,
+   * the default is auto-inserted as pre-verified (domain already verified on AWS SES).
+   */
+  async ensureDefaultSender(organizationId: string): Promise<void> {
+    const supabase = getCompanyDbClient();
+
+    // Check if org already has any senders
+    const { count, error: countError } = await supabase
+      .from('senders')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', organizationId);
+
+    if (countError) {
+      console.error('Error checking existing senders:', countError);
+      return;
+    }
+
+    if ((count || 0) > 0) {
+      return; // Org already has senders, no need to add default
+    }
+
+    // Insert the default sender as pre-verified
+    const { error: insertError } = await supabase
+      .from('senders')
+      .insert({
+        organization_id: organizationId,
+        email_address: DEFAULT_SENDER_EMAIL,
+        domain: DEFAULT_SENDER_DOMAIN,
+        verification_status: SENDER_VERIFICATION_STATUS.VERIFIED,
+        dkim_status: SENDER_DKIM_STATUS.SUCCESS,
+        is_default: true,
+        last_verified_at: new Date().toISOString(),
+      });
+
+    if (insertError) {
+      // Don't throw - this is a best-effort operation
+      console.error('Error inserting default sender:', insertError);
+    }
   }
 
   /**

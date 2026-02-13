@@ -167,6 +167,8 @@
 
 ## 21. Check the content of each email is legal or not before sending, sensetive content alert. M
 
+## 22. Email generation progress bar is not working. H
+
 # Senders
 
 ## 1 ✅ Repalce action menu to 2 buttons element, 'Verify' and 'Delete' for each row of table. H
