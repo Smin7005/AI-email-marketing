@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import CampaignActivity from '@/components/campaign/campaign-activity';
 import CampaignProgressBar from '@/components/campaign/CampaignProgressBar';
 import {
   AlertDialog,
@@ -345,66 +344,6 @@ export default function CampaignDetailPage() {
           </Card>
         </div>
 
-        {/* Analytics Dashboard */}
-        {(campaign.status === 'sent' || campaign.status === 'sending') && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Sent</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {campaignItems?.filter((item) =>
-                    ['sent', 'opened', 'clicked'].includes(item.status)
-                  ).length || 0}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Open Rate</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {(() => {
-                  const sentCount =
-                    campaignItems?.filter((item) =>
-                      ['sent', 'opened', 'clicked'].includes(item.status)
-                    ).length || 0;
-                  const openedCount =
-                    campaignItems?.filter((item) =>
-                      ['opened', 'clicked'].includes(item.status)
-                    ).length || 0;
-                  const openRate =
-                    sentCount > 0 ? Math.round((openedCount / sentCount) * 100) : 0;
-                  return <div className="text-2xl font-bold">{openRate}%</div>;
-                })()}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Click Rate</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {(() => {
-                  const sentCount =
-                    campaignItems?.filter((item) =>
-                      ['sent', 'opened', 'clicked'].includes(item.status)
-                    ).length || 0;
-                  const clickedCount =
-                    campaignItems?.filter((item) => item.status === 'clicked')
-                      .length || 0;
-                  const clickRate =
-                    sentCount > 0
-                      ? Math.round((clickedCount / sentCount) * 100)
-                      : 0;
-                  return <div className="text-2xl font-bold">{clickRate}%</div>;
-                })()}
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         <Card className="mb-6">
           <CardHeader>
@@ -418,12 +357,6 @@ export default function CampaignDetailPage() {
 
       <Separator className="my-6" />
 
-      {/* Recent Activity Section */}
-      {(campaign.status === 'sent' || campaign.status === 'sending') && (
-        <div className="mb-8">
-          <CampaignActivity campaignId={campaignId} />
-        </div>
-      )}
 
       <div>
         <h2 className="text-2xl font-bold mb-4">Campaign Emails</h2>

@@ -72,6 +72,10 @@
 
 ## 16. Add state name selector between city input and filter. L
 
+## 17. Categories: increase to 39 categories. H
+
+## 18. Table display errors, each element should be at central of each row. EH
+
 # Collections
 
 ## 1. ✅ Fail to load leads in collection: H
@@ -167,13 +171,15 @@
 
 ## 21. Check the content of each email is legal or not before sending, sensetive content alert. M
 
-## 22. Email generation progress bar is not working. H
+## 22. ✅ Dual-purpose Progress Bar on Campaign Page, create new Email generation progress bar, envoke existing components. H
+
+## 23. Delete 3 card components: Recent Activity, Open Rate, and Click Rate. H
 
 # Senders
 
 ## 1 ✅ Repalce action menu to 2 buttons element, 'Verify' and 'Delete' for each row of table. H
 
-## 2. Set default sender for all new users. H
+## 2. ✅ Set default sender for all new users. H
 
 # Settings 
 
@@ -205,5 +211,7 @@
  - 4. ✅ User management, such as restriction of adding domain names for free users. M
 
  # 12FEB2026 
- ## 1. ✅ Replace 'Your company' to 'Campaign Name'. H
+ ## 1. ✅ Replace 'Your company' (Email From Header) to 'Campaign Name'. H
  ## 2. Replace email sending API from Resend to AWS SES. H
+
+
