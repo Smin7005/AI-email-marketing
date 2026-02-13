@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import CampaignActivity from '@/components/campaign/campaign-activity';
+import CampaignProgressBar from '@/components/campaign/CampaignProgressBar';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -255,16 +256,6 @@ export default function CampaignDetailPage() {
     );
   }
 
-  const progressPercentage =
-    campaign.totalRecipients > 0
-      ? Math.round((campaign.generatedCount / campaign.totalRecipients) * 100)
-      : 0;
-
-  const sentPercentage =
-    campaign.totalRecipients > 0
-      ? Math.round((campaign.sentCount / campaign.totalRecipients) * 100)
-      : 0;
-
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl">
       <Button variant="ghost" onClick={() => router.back()} className="mb-4">
@@ -322,28 +313,24 @@ export default function CampaignDetailPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {/* Merged: Sent Progress Card - spans 2 columns */}
-          <Card className="md:col-span-2">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
-                Sent Progress
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {campaign.sentCount}/{campaign.totalRecipients}
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div
-                  className="bg-green-600 h-2 rounded-full transition-all"
-                  style={{ width: `${sentPercentage}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-gray-600 mt-1">
-                {sentPercentage}% sent
-              </p>
-            </CardContent>
-          </Card>
+          {/* Progress Bar - switches between generation and sending based on status */}
+          {campaign.status === 'sending' || campaign.status === 'sent' ? (
+            <CampaignProgressBar
+              title="Sending Progress"
+              current={campaign.sentCount}
+              total={campaign.totalRecipients}
+              label="sent"
+              colorClass="bg-green-600"
+            />
+          ) : (
+            <CampaignProgressBar
+              title="Generation Progress"
+              current={campaign.generatedCount}
+              total={campaign.totalRecipients}
+              label="generated"
+              colorClass="bg-blue-600"
+            />
+          )}
 
           {/* Email Tone Card */}
           <Card>
