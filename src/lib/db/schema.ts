@@ -223,6 +223,8 @@ export const senders = pgTable('senders', {
   lastVerifiedAt: timestamp('last_verified_at'),
   verificationError: text('verification_error'),
   configurationSetName: varchar('configuration_set_name', { length: 255 }),
+  provider: varchar('provider', { length: 20 }).default('ses').notNull(), // 'ses' or 'nylas'
+  nylasGrantId: varchar('nylas_grant_id', { length: 255 }), // Nylas grant ID for connected accounts
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
@@ -277,4 +279,9 @@ export const SENDER_DKIM_STATUS = {
   SUCCESS: 'success',
   FAILED: 'failed',
   NOT_STARTED: 'not_started',
+} as const;
+
+export const SENDER_PROVIDER = {
+  SES: 'ses',
+  NYLAS: 'nylas',
 } as const;

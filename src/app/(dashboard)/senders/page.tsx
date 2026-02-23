@@ -15,6 +15,7 @@ interface Sender {
   verificationStatus: string;
   dkimStatus: string | null;
   isDefault: boolean;
+  provider: string;
   createdAt: string;
 }
 

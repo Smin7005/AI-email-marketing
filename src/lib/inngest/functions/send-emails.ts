@@ -2,6 +2,7 @@ import { inngest } from '../client';
 import { getCompanyDbClient } from '../../db/supabase';
 import { emailService } from '../../services/email';
 import { sesService } from '../../email/ses';
+import { nylasService } from '../../email/nylas';
 import { senderVerificationService } from '../../services/sender-verification';
 import jwt from 'jsonwebtoken';
 
@@ -322,14 +323,19 @@ export const sendCampaignBatch = inngest.createFunction(
       return Array.from(suppressedSet);
     });
 
-    // Look up verified SES sender for this organization
+    // Look up verified sender for this organization (SES or Nylas)
     const verifiedSender = await step.run('lookup-verified-sender', async () => {
       const sender = await senderVerificationService.getVerifiedSender(organizationId);
       if (sender) {
-        console.log('[SendEmails] Found verified SES sender:', sender.emailAddress);
-        return { email: sender.emailAddress, domain: sender.domain };
+        console.log('[SendEmails] Found verified sender:', sender.emailAddress, 'provider:', sender.provider);
+        return {
+          email: sender.emailAddress,
+          domain: sender.domain,
+          provider: sender.provider,
+          nylasGrantId: sender.nylasGrantId,
+        };
       }
-      console.log('[SendEmails] No verified SES sender found, will fall back to Resend');
+      console.log('[SendEmails] No verified sender found, will fall back to Resend');
       return null;
     });
 
@@ -340,12 +346,12 @@ export const sendCampaignBatch = inngest.createFunction(
 
       const senderName = campaign.name || 'Campaign';
       const senderEmail = verifiedSender?.email || process.env.FROM_EMAIL || 'onboarding@resend.dev';
-      const useSES = !!verifiedSender;
+      const provider = verifiedSender?.provider || 'resend';
 
       console.log('[SendEmails] Sender info:', {
         sender_name: senderName,
         sender_email: senderEmail,
-        provider: useSES ? 'AWS SES' : 'Resend',
+        provider: provider,
       });
 
       const sendResults: Array<{
@@ -383,7 +389,19 @@ export const sendCampaignBatch = inngest.createFunction(
 
           let messageId: string | null = null;
 
-          if (useSES) {
+          if (provider === 'nylas' && verifiedSender?.nylasGrantId) {
+            // Send via Nylas
+            console.log('[SendEmails] Sending via Nylas from:', senderEmail, 'to:', email.businessEmail);
+            const result = await nylasService.sendEmail({
+              grantId: verifiedSender.nylasGrantId,
+              from: senderEmail,
+              fromName: senderName,
+              to: email.businessEmail!,
+              subject: email.emailSubject || 'No Subject',
+              html: emailContent,
+            });
+            messageId = result.messageId;
+          } else if (provider === 'ses') {
             // Send via AWS SES
             console.log('[SendEmails] Sending via AWS SES from:', senderEmail, 'to:', email.businessEmail);
             const result = await sesService.sendEmail({
@@ -436,8 +454,9 @@ export const sendCampaignBatch = inngest.createFunction(
           });
         }
 
-        // Rate limit delay: SES allows ~14/sec, Resend allows ~2/sec
-        await new Promise(resolve => setTimeout(resolve, useSES ? 100 : 600));
+        // Rate limit delay per provider: SES ~14/sec, Nylas ~5/sec, Resend ~2/sec
+        const delayMs = provider === 'ses' ? 100 : provider === 'nylas' ? 200 : 600;
+        await new Promise(resolve => setTimeout(resolve, delayMs));
       }
 
       return sendResults;

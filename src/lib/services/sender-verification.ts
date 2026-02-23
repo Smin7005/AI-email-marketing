@@ -1,6 +1,7 @@
 import { getCompanyDbClient } from '../db/supabase';
 import { sesService, SESService } from '../email/ses';
-import { SENDER_VERIFICATION_STATUS, SENDER_DKIM_STATUS } from '../db/schema';
+import { nylasService, NylasService } from '../email/nylas';
+import { SENDER_VERIFICATION_STATUS, SENDER_DKIM_STATUS, SENDER_PROVIDER } from '../db/schema';
 
 export interface DnsRecord {
   type: 'TXT' | 'CNAME';
@@ -23,6 +24,8 @@ export interface SenderInfo {
   lastVerifiedAt: string | null;
   verificationError: string | null;
   configurationSetName: string | null;
+  provider: string;
+  nylasGrantId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -32,16 +35,23 @@ export interface AddSenderResult {
   dnsRecords: DnsRecord[];
 }
 
+export interface AddNylasSenderResult {
+  sender: SenderInfo;
+  authUrl: string;
+}
+
 // Default sender that all new organizations get automatically
 const DEFAULT_SENDER_EMAIL = 'hello@mail-marketing.online';
 const DEFAULT_SENDER_DOMAIN = 'mail-marketing.online';
 
 export class SenderVerificationService {
   private ses: SESService;
+  private nylas: NylasService;
   private readonly MAX_PENDING_PER_ORG = 5;
 
-  constructor(sesService?: SESService) {
-    this.ses = sesService || new SESService();
+  constructor(sesServiceInstance?: SESService, nylasServiceInstance?: NylasService) {
+    this.ses = sesServiceInstance || new SESService();
+    this.nylas = nylasServiceInstance || new NylasService();
   }
 
   /**
@@ -78,6 +88,7 @@ export class SenderVerificationService {
         dkim_status: SENDER_DKIM_STATUS.SUCCESS,
         is_default: true,
         last_verified_at: new Date().toISOString(),
+        provider: SENDER_PROVIDER.SES,
       });
 
     if (insertError) {
@@ -228,6 +239,97 @@ export class SenderVerificationService {
   }
 
   /**
+   * Add a new Nylas sender (personal email) for OAuth connection
+   */
+  async addNylasSender(organizationId: string, emailAddress: string): Promise<AddNylasSenderResult> {
+    const supabase = getCompanyDbClient();
+
+    // Normalize email
+    const normalizedEmail = emailAddress.toLowerCase().trim();
+
+    // Validate email format
+    const validation = this.validateEmail(normalizedEmail);
+    if (!validation.valid) {
+      throw new Error(validation.error);
+    }
+
+    const domain = this.extractDomain(normalizedEmail);
+
+    // Check rate limit
+    const withinLimit = await this.checkRateLimit(organizationId);
+    if (!withinLimit) {
+      throw new Error(`Maximum of ${this.MAX_PENDING_PER_ORG} pending senders reached`);
+    }
+
+    // Check if sender already exists for this org
+    const { data: existingSender } = await supabase
+      .from('senders')
+      .select('id')
+      .eq('organization_id', organizationId)
+      .eq('email_address', normalizedEmail)
+      .single();
+
+    if (existingSender) {
+      throw new Error('This email address is already registered');
+    }
+
+    // Insert sender record as pending with provider='nylas'
+    const { data: newSender, error: insertError } = await supabase
+      .from('senders')
+      .insert({
+        organization_id: organizationId,
+        email_address: normalizedEmail,
+        domain: domain,
+        verification_status: SENDER_VERIFICATION_STATUS.PENDING,
+        provider: SENDER_PROVIDER.NYLAS,
+        is_default: false,
+      })
+      .select()
+      .single();
+
+    if (insertError || !newSender) {
+      throw new Error(`Failed to create sender: ${insertError?.message || 'Unknown error'}`);
+    }
+
+    // Generate Nylas hosted auth URL
+    const authUrl = this.nylas.getAuthUrl(normalizedEmail, newSender.id);
+
+    return {
+      sender: this.mapToSenderInfo(newSender),
+      authUrl,
+    };
+  }
+
+  /**
+   * Complete Nylas OAuth: exchange code for grant and update sender record
+   */
+  async completeNylasAuth(senderId: number, code: string): Promise<SenderInfo> {
+    const supabase = getCompanyDbClient();
+
+    // Exchange code for grant
+    const { grantId, email } = await this.nylas.exchangeCodeForGrant(code);
+
+    // Update sender record with grant ID and mark as verified
+    const { data: updatedSender, error } = await supabase
+      .from('senders')
+      .update({
+        nylas_grant_id: grantId,
+        verification_status: SENDER_VERIFICATION_STATUS.VERIFIED,
+        last_verified_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', senderId)
+      .select()
+      .single();
+
+    if (error || !updatedSender) {
+      throw new Error(`Failed to update sender: ${error?.message || 'Unknown error'}`);
+    }
+
+    return this.mapToSenderInfo(updatedSender);
+  }
+
+  /**
    * Get DNS records for a sender
    */
   getDnsRecords(params: {
@@ -307,7 +409,7 @@ export class SenderVerificationService {
   }
 
   /**
-   * Check verification status with AWS SES and update database
+   * Check verification status with AWS SES or Nylas and update database
    */
   async checkVerificationStatus(organizationId: string, senderId: number): Promise<SenderInfo> {
     const supabase = getCompanyDbClient();
@@ -316,6 +418,34 @@ export class SenderVerificationService {
     const sender = await this.getSender(organizationId, senderId);
     if (!sender) {
       throw new Error('Sender not found');
+    }
+
+    // Handle Nylas senders differently
+    if (sender.provider === SENDER_PROVIDER.NYLAS) {
+      if (sender.nylasGrantId) {
+        const isValid = await this.nylas.verifyGrant(sender.nylasGrantId);
+        const newStatus = isValid ? SENDER_VERIFICATION_STATUS.VERIFIED : SENDER_VERIFICATION_STATUS.FAILED;
+
+        const { data: updatedSender, error } = await supabase
+          .from('senders')
+          .update({
+            verification_status: newStatus,
+            last_verified_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            verification_error: isValid ? null : 'Nylas grant is no longer valid',
+          })
+          .eq('id', senderId)
+          .select()
+          .single();
+
+        if (error || !updatedSender) {
+          throw new Error(`Failed to update sender: ${error?.message || 'Unknown error'}`);
+        }
+
+        return this.mapToSenderInfo(updatedSender);
+      }
+      // Still pending if no grant ID yet (OAuth not completed)
+      return sender;
     }
 
     // Check status with AWS SES
@@ -389,15 +519,15 @@ export class SenderVerificationService {
       throw new Error('Sender not found');
     }
 
-    // Check if there are active campaigns using this sender
-    // (This check can be expanded based on business requirements)
-
-    // Delete from AWS SES
-    try {
-      await this.ses.deleteIdentity(sender.domain);
-    } catch (error) {
-      console.error('Failed to delete identity from SES:', error);
-      // Continue with database deletion even if SES deletion fails
+    // Clean up provider-specific resources
+    if (sender.provider === SENDER_PROVIDER.NYLAS && sender.nylasGrantId) {
+      await this.nylas.revokeGrant(sender.nylasGrantId);
+    } else if (sender.provider === SENDER_PROVIDER.SES) {
+      try {
+        await this.ses.deleteIdentity(sender.domain);
+      } catch (error) {
+        console.error('Failed to delete identity from SES:', error);
+      }
     }
 
     // Delete from database
@@ -513,6 +643,8 @@ export class SenderVerificationService {
       lastVerifiedAt: row.last_verified_at as string | null,
       verificationError: row.verification_error as string | null,
       configurationSetName: row.configuration_set_name as string | null,
+      provider: (row.provider as string) || SENDER_PROVIDER.SES,
+      nylasGrantId: row.nylas_grant_id as string | null,
       createdAt: row.created_at as string,
       updatedAt: row.updated_at as string,
     };

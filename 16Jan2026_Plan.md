@@ -96,6 +96,8 @@
 
 ## 4. ✅ Update the layout of each collections, match to Leads page. H
 
+## 5. 
+
 # Campaigns
 
 ## 1. ✅ Duplicated 'Create new campaign' button. H
@@ -173,13 +175,15 @@
 
 ## 22. ✅ Dual-purpose Progress Bar on Campaign Page, create new Email generation progress bar, envoke existing components. H
 
-## 23. Delete 3 card components: Recent Activity, Open Rate, and Click Rate. H
+## 23. ✅ Delete 3 card components: Recent Activity, Open Rate, and Click Rate. H
 
 # Senders
 
 ## 1 ✅ Repalce action menu to 2 buttons element, 'Verify' and 'Delete' for each row of table. H
 
 ## 2. ✅ Set default sender for all new users. H
+
+## 3. Add a new sending email API, user should choose Email or Domain, implemente by Nylas SaaS. H
 
 # Settings 
 
@@ -189,7 +193,7 @@
 
 # Entire Website
 
-## 1. Check the layout colour of drop down box. M
+## 1. Check all components of website, replace the layout to 'light mode'. M
 
 ## 2. Check the bugs at vercel deployments between my account and company's account. M
 
@@ -207,11 +211,11 @@
       1.3.3: Add Sender, button element
       1.3.4: get TXT values from AWS SES, display at DNS records 
  - 2. ✅ Verification of users' inputs. H
- - 3. Sending emails via AWS SES. H
+ - 3. ✅ Sending emails via AWS SES. H
  - 4. ✅ User management, such as restriction of adding domain names for free users. M
 
  # 12FEB2026 
  ## 1. ✅ Replace 'Your company' (Email From Header) to 'Campaign Name'. H
- ## 2. Replace email sending API from Resend to AWS SES. H
+ ## 2. ✅ Replace email sending API from Resend to AWS SES. H
 
 

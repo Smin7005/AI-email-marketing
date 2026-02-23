@@ -98,7 +98,7 @@ function cleanAndFormatEmail(body: string, senderName: string, businessName: str
 }
 
 /**
- * Generate email with retry logic for DMXAPI (DeepSeek-V3.2)
+ * Generate email with retry logic for DMXAPI 
  */
 async function generateEmailWithRetry(
   prompt: string,

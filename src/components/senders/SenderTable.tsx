@@ -12,7 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Trash2, RefreshCw, Star, Loader2, Globe } from 'lucide-react';
+import { Trash2, RefreshCw, Star, Loader2, Globe, Mail } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Sender {
@@ -22,6 +22,7 @@ interface Sender {
   verificationStatus: string;
   dkimStatus: string | null;
   isDefault: boolean;
+  provider: string;
   createdAt: string;
 }
 
@@ -157,7 +158,11 @@ export function SenderTable({
               <tr key={sender.id} className="border-b hover:bg-muted/30">
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-muted-foreground" />
+                    {sender.provider === 'nylas' ? (
+                      <span title="Personal Email"><Mail className="h-4 w-4 text-muted-foreground" /></span>
+                    ) : (
+                      <span title="Custom Domain"><Globe className="h-4 w-4 text-muted-foreground" /></span>
+                    )}
                     <span className="font-medium">{sender.emailAddress}</span>
                     {sender.isDefault && (
                       <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
@@ -175,19 +180,22 @@ export function SenderTable({
                 </td>
                 <td className="py-3 px-4 text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="Check Verification"
-                      disabled={actionLoading === sender.id}
-                      onClick={() => handleVerify(sender.id)}
-                    >
-                      {actionLoading === sender.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-4 w-4" />
-                      )}
-                    </Button>
+                    {/* Hide DNS check button for Nylas senders (verification is via OAuth) */}
+                    {sender.provider !== 'nylas' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Check Verification"
+                        disabled={actionLoading === sender.id}
+                        onClick={() => handleVerify(sender.id)}
+                      >
+                        {actionLoading === sender.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
                     {sender.verificationStatus === 'verified' && (
                       <Button
                         variant="ghost"

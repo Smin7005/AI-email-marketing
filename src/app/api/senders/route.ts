@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 // Sender creation schema
 const createSenderSchema = z.object({
   emailAddress: z.string().email('Invalid email address'),
+  provider: z.enum(['ses', 'nylas']).default('ses'),
 });
 
 /**
@@ -75,15 +76,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { emailAddress } = validation.data;
+    const { emailAddress, provider } = validation.data;
 
-    // Add sender
-    const result = await senderVerificationService.addSender(
-      effectiveOrgId,
-      emailAddress
-    );
-
-    return NextResponse.json(result, { status: 201 });
+    // Add sender based on provider type
+    if (provider === 'nylas') {
+      const result = await senderVerificationService.addNylasSender(
+        effectiveOrgId,
+        emailAddress
+      );
+      return NextResponse.json(result, { status: 201 });
+    } else {
+      const result = await senderVerificationService.addSender(
+        effectiveOrgId,
+        emailAddress
+      );
+      return NextResponse.json(result, { status: 201 });
+    }
   } catch (error) {
     console.error('Error creating sender:', error);
 
