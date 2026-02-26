@@ -3,6 +3,8 @@ import { getUserCollections } from '@/lib/actions/collections';
 import CollectionCard from '@/components/collections/CollectionCard';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 interface Collection {
   id: string;
   name: string;

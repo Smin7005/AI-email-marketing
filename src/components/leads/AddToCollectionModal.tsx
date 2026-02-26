@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { X, FolderPlus, Save } from 'lucide-react';
 import { getUserCollections, createCollection, addLeadsToCollection } from '@/lib/actions/collections';
 
@@ -25,6 +26,7 @@ export default function AddToCollectionModal({
   selectedCompanies,
   onSuccess,
 }: AddToCollectionModalProps) {
+  const router = useRouter();
   const [mode, setMode] = useState<'select' | 'create'>('select');
   const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string>('');
@@ -90,9 +92,10 @@ export default function AddToCollectionModal({
         console.log(`${result.duplicates} companies were already in the collection`);
       }
 
-      // Close modal and refresh
+      // Close modal and invalidate router cache so /collections shows fresh data
       onClose();
       onSuccess?.();
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save to collection');
     } finally {

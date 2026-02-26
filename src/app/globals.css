@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
+/* Force light mode: switch dark variant to class-based so it never activates */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -44,4 +48,32 @@ body {
 /* 3. Hide neighboring month days visually but keep grid space */
 .react-calendar__month-view__days__day--neighboringMonth {
   visibility: hidden !important;
+}
+
+/* AG Grid: visible column separators and resize handles */
+.ag-theme-quartz {
+  --ag-header-column-separator-display: block;
+  --ag-header-column-separator-height: 100%;
+  --ag-header-column-separator-width: 2px;
+  --ag-header-column-separator-color: #6b7280;
+  --ag-header-column-resize-handle-display: block;
+  --ag-header-column-resize-handle-height: 40%;
+  --ag-header-column-resize-handle-width: 2px;
+  --ag-header-column-resize-handle-color: #93c5fd;
+}
+
+.ag-theme-quartz .ag-header {
+  border-bottom: 3px solid #374151;
+}
+
+.ag-theme-quartz .ag-header-cell {
+  border-right: 2px solid #374151;
+}
+
+.ag-theme-quartz .ag-cell {
+  border-right: 2px solid #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }

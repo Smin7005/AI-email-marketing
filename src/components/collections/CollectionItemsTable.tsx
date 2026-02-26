@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import {
   ColDef,
   GridApi,
   GridReadyEvent,
+  CellMouseDownEvent,
   ModuleRegistry,
   AllCommunityModule
 } from 'ag-grid-community';
@@ -41,6 +42,7 @@ interface CollectionItemsTableProps {
 
 export default function CollectionItemsTable({ items, collectionId }: CollectionItemsTableProps) {
   const gridApiRef = useRef<GridApi | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [isRemoving, setIsRemoving] = useState(false);
 
@@ -51,15 +53,10 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
       field: 'companyinfo.company_name',
       filter: true,
       sortable: true,
-      width: 200,
+      width: 300,
       cellRenderer: (params: any) => {
         const company = params.data?.companyinfo;
-        const companyName = company?.company_name || 'Unknown';
-        return (
-          <div className="flex items-center py-2">
-            <div className="text-sm font-medium text-gray-900">{companyName}</div>
-          </div>
-        );
+        return <div className="text-sm text-gray-700">{company?.company_name || 'Unknown'}</div>;
       },
     },
     {
@@ -67,11 +64,10 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
       field: 'companyinfo.category_name',
       filter: true,
       sortable: true,
-      width: 150,
+      width: 220,
       cellRenderer: (params: any) => {
         const company = params.data?.companyinfo;
-        const category = company?.category_name;
-        return <div className="text-sm text-gray-900">{category || '-'}</div>;
+        return <div className="text-sm text-gray-700">{company?.category_name || '-'}</div>;
       },
     },
     {
@@ -82,19 +78,15 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
       width: 140,
       cellRenderer: (params: any) => {
         const company = params.data?.companyinfo;
-        return (
-          <div className="py-2">
-            {company?.phone_number ? (
-              <div className="flex items-center text-sm text-gray-600">
-                <Phone className="h-3 w-3 mr-1 text-gray-400" />
-                <a href={`tel:${company.phone_number}`} className="hover:text-blue-600">
-                  {company.phone_number}
-                </a>
-              </div>
-            ) : (
-              <div className="text-sm text-gray-400">-</div>
-            )}
+        return company?.phone_number ? (
+          <div className="flex items-center gap-1 text-sm text-gray-700">
+            <Phone className="h-3 w-3 text-gray-500" />
+            <a href={`tel:${company.phone_number}`} className="hover:text-blue-600">
+              {company.phone_number}
+            </a>
           </div>
+        ) : (
+          <div className="text-sm text-gray-700">-</div>
         );
       },
     },
@@ -106,22 +98,18 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
       width: 200,
       cellRenderer: (params: any) => {
         const company = params.data?.companyinfo;
-        return (
-          <div className="py-2">
-            {company?.email ? (
-              <div className="flex items-center text-sm text-gray-600">
-                <Mail className="h-3 w-3 mr-1 text-gray-400" />
-                <a
-                  href={`mailto:${company.email}`}
-                  className="hover:text-blue-600 truncate max-w-[180px] block"
-                >
-                  {company.email}
-                </a>
-              </div>
-            ) : (
-              <div className="text-sm text-gray-400">-</div>
-            )}
+        return company?.email ? (
+          <div className="flex items-center gap-1 text-sm text-gray-700">
+            <Mail className="h-3 w-3 text-gray-500" />
+            <a
+              href={`mailto:${company.email}`}
+              className="hover:text-blue-600 truncate max-w-[180px] block"
+            >
+              {company.email}
+            </a>
           </div>
+        ) : (
+          <div className="text-sm text-gray-700">-</div>
         );
       },
     },
@@ -133,11 +121,7 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
       width: 150,
       cellRenderer: (params: any) => {
         const company = params.data?.companyinfo;
-        return (
-          <div className="text-sm text-gray-600 truncate py-2">
-            {company?.address_suburb || '-'}
-          </div>
-        );
+        return <div className="text-sm text-gray-700 truncate">{company?.address_suburb || '-'}</div>;
       },
     },
     {
@@ -148,11 +132,7 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
       width: 80,
       cellRenderer: (params: any) => {
         const company = params.data?.companyinfo;
-        return (
-          <div className="text-sm text-gray-600 py-2">
-            {company?.address_state || '-'}
-          </div>
-        );
+        return <div className="text-sm text-gray-700">{company?.address_state || '-'}</div>;
       },
     },
     {
@@ -163,11 +143,7 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
       width: 90,
       cellRenderer: (params: any) => {
         const company = params.data?.companyinfo;
-        return (
-          <div className="text-sm text-gray-600 py-2">
-            {company?.address_postcode || '-'}
-          </div>
-        );
+        return <div className="text-sm text-gray-700">{company?.address_postcode || '-'}</div>;
       },
     },
     {
@@ -190,6 +166,45 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
 
   const onGridReady = useCallback((params: GridReadyEvent) => {
     gridApiRef.current = params.api;
+  }, []);
+
+  // Show col-resize cursor when hovering within 6px of a data cell's right border
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      const cell = (e.target as HTMLElement).closest('.ag-cell') as HTMLElement | null;
+      if (!cell) { el.style.cursor = ''; return; }
+      const rect = cell.getBoundingClientRect();
+      el.style.cursor = e.clientX >= rect.right - 6 ? 'col-resize' : '';
+    };
+    el.addEventListener('mousemove', handleMouseMove);
+    return () => el.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  // Column resize from any data row
+  const onCellMouseDown = useCallback((params: CellMouseDownEvent) => {
+    const mouseEvent = params.event as MouseEvent;
+    if (!mouseEvent || !gridApiRef.current) return;
+    const cellEl = (mouseEvent.target as HTMLElement).closest('.ag-cell') as HTMLElement;
+    if (!cellEl) return;
+    const rect = cellEl.getBoundingClientRect();
+    if (mouseEvent.clientX < rect.right - 6) return;
+    mouseEvent.stopPropagation();
+    mouseEvent.preventDefault();
+    const colId = params.column.getColId();
+    const startX = mouseEvent.clientX;
+    const startWidth = params.column.getActualWidth();
+    const onMouseMove = (e: MouseEvent) => {
+      const newWidth = Math.max(50, startWidth + (e.clientX - startX));
+      gridApiRef.current?.setColumnWidth(colId, newWidth);
+    };
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
   }, []);
 
   const onSelectionChanged = useCallback(() => {
@@ -276,18 +291,19 @@ export default function CollectionItemsTable({ items, collectionId }: Collection
       )}
 
       {/* AG Grid */}
-      <div className="ag-theme-quartz w-full">
+      <div className="ag-theme-quartz w-full" ref={wrapperRef}>
         <AgGridReact
           rowData={items}
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
           onGridReady={onGridReady}
           onSelectionChanged={onSelectionChanged}
+          onCellMouseDown={onCellMouseDown}
           rowSelection={{
             mode: 'multiRow',
             headerCheckbox: true,
             checkboxes: true,
-            enableClickSelection: false
+            enableClickSelection: true
           }}
           animateRows={true}
           pagination={false}

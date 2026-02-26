@@ -32,7 +32,7 @@ export default function DashboardHeader() {
   ];
 
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-sm border-b">
+    <header className="bg-white shadow-sm border-b">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-8">
