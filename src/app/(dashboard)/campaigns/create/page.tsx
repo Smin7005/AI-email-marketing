@@ -2,6 +2,10 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useNextStep } from 'nextstepjs';
+import { useUser } from '@clerk/nextjs';
+
+const NEW_USER_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 import { CampaignForm } from '@/components/campaigns/CampaignForm';
 import { CampaignPreview } from '@/components/campaigns/CampaignPreview';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,6 +56,18 @@ function CreateCampaignContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isNewCampaign = searchParams.get('new') === 'true';
+  const { startNextStep } = useNextStep();
+  const { user } = useUser();
+
+  useEffect(() => {
+    if (!user?.createdAt) return;
+    const isNewUser = Date.now() - user.createdAt.getTime() < NEW_USER_WINDOW_MS;
+    const hasSeenTour = localStorage.getItem('tour-create-campaign-tour-done') === 'true';
+    if (isNewUser && !hasSeenTour) {
+      const timer = setTimeout(() => startNextStep('create-campaign-tour'), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [user, startNextStep]);
 
   const [formData, setFormData] = useState<{
     name: string;
@@ -346,12 +362,12 @@ function CreateCampaignContent() {
       </div>
 
       {/* Recipients Section */}
-      <Card className="mb-6">
+      <Card id="campaign-recipients-card" className="mb-6">
         <CardContent className="pt-6">
           <h3 className="text-lg font-medium mb-4">Recipients</h3>
 
           {/* Capsule Elements for Collections and Add Button */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div id="campaign-collections-picker" className="flex flex-wrap items-center gap-3">
             {isLoadingCollections ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-5 w-5 animate-spin mr-2" />

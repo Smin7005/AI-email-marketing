@@ -1,7 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useNextStep } from 'nextstepjs';
+import { useUser } from '@clerk/nextjs';
+
+const NEW_USER_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Play, Send, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -49,6 +53,18 @@ export default function CampaignDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const campaignId = params.id as string;
+  const { startNextStep } = useNextStep();
+  const { user } = useUser();
+
+  useEffect(() => {
+    if (!user?.createdAt) return;
+    const isNewUser = Date.now() - user.createdAt.getTime() < NEW_USER_WINDOW_MS;
+    const hasSeenTour = localStorage.getItem('tour-campaign-detail-tour-done') === 'true';
+    if (isNewUser && !hasSeenTour) {
+      const timer = setTimeout(() => startNextStep('campaign-detail-tour'), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [user, startNextStep]);
 
   const [isStartingGeneration, setIsStartingGeneration] = useState(false);
   const [isSendingCampaign, setIsSendingCampaign] = useState(false);
@@ -275,6 +291,7 @@ export default function CampaignDetailPage() {
           </div>
           {campaign.status === 'draft' && (
             <Button
+              id="campaign-start-generation-button"
               onClick={handleStartGeneration}
               disabled={isStartingGeneration}
             >
@@ -284,6 +301,7 @@ export default function CampaignDetailPage() {
           )}
           {campaign.status === 'ready' && (
             <Button
+              id="campaign-send-button"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -311,7 +329,7 @@ export default function CampaignDetailPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div id="campaign-progress-area" className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {/* Progress Bar - switches between generation and sending based on status */}
           {campaign.status === 'sending' || campaign.status === 'sent' ? (
             <CampaignProgressBar
@@ -359,7 +377,7 @@ export default function CampaignDetailPage() {
 
 
       <div>
-        <h2 className="text-2xl font-bold mb-4">Campaign Emails</h2>
+        <h2 id="campaign-emails-section" className="text-2xl font-bold mb-4">Campaign Emails</h2>
         {itemsLoading ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (

@@ -2,6 +2,7 @@ import { getCompanyDbClient } from '@/lib/db/company-client';
 import LeadsFilters from '@/components/leads/LeadsFilters';
 import LeadsTable from '@/components/leads/LeadsTable';
 import PaginationControls from '@/components/leads/PaginationControls';
+import { TourAutoStart } from '@/components/onboarding/TourAutoStart';
 
 interface Company {
   listing_id: string;
@@ -92,6 +93,7 @@ export default async function LeadsPage({
 
   return (
     <div className="space-y-6">
+      <TourAutoStart tourName="leads-tour" />
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div>

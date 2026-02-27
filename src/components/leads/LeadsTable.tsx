@@ -270,7 +270,7 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
     <>
       {/* Floating Action Bar */}
       {selectedLeads.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
+        <div id="leads-save-to-collection-bar" className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
           <div className="bg-blue-600 text-white rounded-lg shadow-lg px-6 py-3 flex items-center gap-4">
             <span className="font-medium">
               {selectedLeads.length} selected
@@ -292,7 +292,7 @@ export default function LeadsTable({ leads, activeFilters = [] }: LeadsTableProp
       )}
 
       {/* AG Grid */}
-      <div className="ag-theme-quartz w-full" ref={wrapperRef}>
+      <div id="leads-grid" className="ag-theme-quartz w-full" ref={wrapperRef}>
         <AgGridReact
           rowData={leads}
           columnDefs={columnDefs}

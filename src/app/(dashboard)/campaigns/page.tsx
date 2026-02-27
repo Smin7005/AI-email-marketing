@@ -93,14 +93,14 @@ export default function CampaignsPage() {
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl">
-      <div className="flex items-center justify-between mb-8">
+      <div id="campaigns-header" className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold">Campaigns</h1>
           <p className="text-gray-600 mt-1">
             Manage your AI-powered email campaigns
           </p>
         </div>
-        <Button asChild>
+        <Button id="campaigns-create-button" asChild>
           <Link href="/campaigns/create?new=true">
             <Plus className="w-4 h-4 mr-2" />
             Create New Campaign
@@ -119,7 +119,7 @@ export default function CampaignsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div id="campaigns-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {campaigns.map((campaign) => (
             <Card
               key={campaign.id}

@@ -114,6 +114,7 @@ export function CampaignForm({ onSubmit, isLoading = false, initialValues, onCha
               <FormLabel>Campaign Name</FormLabel>
               <FormControl>
                 <Input
+                  id="campaign-name-input"
                   placeholder="e.g., Q1 Outreach for IT Companies"
                   {...field}
                 />
@@ -135,6 +136,7 @@ export function CampaignForm({ onSubmit, isLoading = false, initialValues, onCha
               <FormControl>
                 <div className="relative">
                   <Textarea
+                    id="campaign-service-description"
                     placeholder="Describe the service or product you want to promote..."
                     className="min-h-[120px] resize-y"
                     {...field}
@@ -165,7 +167,7 @@ export function CampaignForm({ onSubmit, isLoading = false, initialValues, onCha
                 defaultValue={field.value}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger id="campaign-tone-select">
                     <SelectValue placeholder="Select the tone for your emails" />
                   </SelectTrigger>
                 </FormControl>
@@ -185,7 +187,7 @@ export function CampaignForm({ onSubmit, isLoading = false, initialValues, onCha
           )}
         />
 
-        <Button type="submit" disabled={isLoading} className="w-full">
+        <Button id="campaign-submit-button" type="submit" disabled={isLoading} className="w-full">
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -2,6 +2,7 @@ import { FolderPlus, ArrowRight } from 'lucide-react';
 import { getUserCollections } from '@/lib/actions/collections';
 import CollectionCard from '@/components/collections/CollectionCard';
 import Link from 'next/link';
+import { TourAutoStart } from '@/components/onboarding/TourAutoStart';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,8 +18,9 @@ export default async function CollectionsPage() {
 
   return (
     <div className="space-y-6">
+      <TourAutoStart tourName="collections-tour" />
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div id="collections-header" className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Collections</h1>
           <p className="mt-1 text-sm text-gray-500">
@@ -26,6 +28,7 @@ export default async function CollectionsPage() {
           </p>
         </div>
         <Link
+          id="collections-create-button"
           href="/leads"
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
@@ -36,7 +39,7 @@ export default async function CollectionsPage() {
 
       {/* Content */}
       {collections.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div id="collections-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {collections.map((collection) => (
             <CollectionCard key={collection.id} collection={collection} />
           ))}

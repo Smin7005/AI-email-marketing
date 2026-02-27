@@ -7,6 +7,10 @@ import { Plus } from 'lucide-react';
 import { SenderTable } from '@/components/senders/SenderTable';
 import { AddSenderDialog } from '@/components/senders/AddSenderDialog';
 import { toast } from 'sonner';
+import { useNextStep } from 'nextstepjs';
+import { useUser } from '@clerk/nextjs';
+
+const NEW_USER_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface Sender {
   id: number;
@@ -23,6 +27,19 @@ export default function SendersPage() {
   const [senders, setSenders] = useState<Sender[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+
+  const { startNextStep } = useNextStep();
+  const { user } = useUser();
+
+  useEffect(() => {
+    if (!user?.createdAt) return;
+    const isNewUser = Date.now() - user.createdAt.getTime() < NEW_USER_WINDOW_MS;
+    const hasSeenTour = localStorage.getItem('tour-senders-tour-done') === 'true';
+    if (isNewUser && !hasSeenTour) {
+      const timer = setTimeout(() => startNextStep('senders-tour'), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [user, startNextStep]);
 
   const fetchSenders = useCallback(async () => {
     try {
@@ -113,20 +130,20 @@ export default function SendersPage() {
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl">
-      <div className="flex items-center justify-between mb-6">
+      <div id="senders-header" className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Senders</h1>
           <p className="text-muted-foreground mt-1">
             Manage email addresses for sending campaigns
           </p>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
+        <Button id="senders-add-button" onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Add sender
         </Button>
       </div>
 
-      <Card>
+      <Card id="senders-table-card">
         <CardHeader className="pb-0" />
         <CardContent className="p-0">
           <SenderTable

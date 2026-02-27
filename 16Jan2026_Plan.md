@@ -63,7 +63,6 @@
 
 ## 12. ✅ Delete the black background after click on save to collection. H
 
-
 ## 14. ✅ Update industry filter data, now there are missing industry_name from rawdata_yellowpage table. H
  - compare the number of category_name and industry_name.
  - new column, summary of current filter: maxmum: 15
@@ -74,7 +73,15 @@
 
 ## 17. Categories: increase to 39 categories. H
 
-## 18. Table display errors, each element should be at central of each row. EH
+## 18. ✅ Table display errors, each element should be at central of each row. EH
+
+## 19. ✅ Add column border line on table component, allow users to modify width of each column. M
+
+## 20. Add new filter which can search by state abbreviation. H
+
+## 21. Reduce the width of border line of each column. M
+
+## 22. ✅ Enable Click-to-Select Rows on Leads and Collections Tables
 
 # Collections
 
@@ -96,7 +103,9 @@
 
 ## 4. ✅ Update the layout of each collections, match to Leads page. H
 
-## 5. 
+## 5. Add a return button after create a new collection. M
+
+## 6. ✅ Auto refresh after user create new collection on Leads page. M
 
 # Campaigns
 
@@ -183,7 +192,17 @@
 
 ## 2. ✅ Set default sender for all new users. H
 
-## 3. Add a new sending email API, user should choose Email or Domain, implemente by Nylas SaaS. H
+## 3. ✅ Add a new sending email API, user should choose Email or Domain, implemente by Nylas SaaS. H
+
+# Analytics
+
+## 1. Statistics of email sending, it should include both AWS SES and Nylas. 
+
+## 2. Replace tab name to 'Usage'.
+
+## 3. Data table: 1 day, 7 days, 30 days. bottom left
+
+## 4. Delete 'Total Emails' and 'Open Rate', move activity list to bottom right. 
 
 # Settings 
 
@@ -193,15 +212,15 @@
 
 # Entire Website
 
-## 1. Check all components of website, replace the layout to 'light mode'. M
+## 1. ✅ Check all components of website, replace the layout to 'light mode'. M
 
-## 2. Check the bugs at vercel deployments between my account and company's account. M
+## 2. ✅ Check the bugs at vercel deployments between my account and company's account. M
 
 ## 3. ✅ Change the domain name of email sending. H
 
 ## 4. ✅ Manually try the work flow of AWS SES. H
 
-## Implementation of multi-tenant email sending by AWS SES, 4 stages in total: 
+## 5. ✅ Implementation of multi-tenant email sending by AWS SES, 4 stages in total: 
  - 1. ✅ Allow user to input required DNS details. H
     1.1 At the bottom side of analyse, create a new page which is Domains.
     1.2 Similar to Resend
@@ -214,8 +233,10 @@
  - 3. ✅ Sending emails via AWS SES. H
  - 4. ✅ User management, such as restriction of adding domain names for free users. M
 
+## 6. New epic: Research which SaaS is good for implementating onboarding flow of user guide in each page. EH
+
+## 7. Redirect to dashboard page after login. H
+
  # 12FEB2026 
  ## 1. ✅ Replace 'Your company' (Email From Header) to 'Campaign Name'. H
  ## 2. ✅ Replace email sending API from Resend to AWS SES. H
-
-
