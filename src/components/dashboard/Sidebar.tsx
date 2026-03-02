@@ -2,12 +2,21 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, Folder, Mail, BarChart2, Settings, Send } from 'lucide-react';
+import { Search, Folder, Mail, BarChart2, Settings, Send, BookOpen } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
+import { useNextStep } from 'nextstepjs';
 import { cn } from '@/lib/utils';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { startNextStep } = useNextStep();
+
+  function handleRestartTour() {
+    Object.keys(localStorage)
+      .filter(key => key.startsWith('tour-'))
+      .forEach(key => localStorage.removeItem(key));
+    startNextStep('sidebar-tour');
+  }
 
   const primaryMenuItems = [
     {
@@ -54,11 +63,18 @@ export default function Sidebar() {
   return (
     <div className="w-64 bg-slate-900 border-r border-slate-800 h-screen flex flex-col fixed left-0 top-0">
       {/* Logo/Brand */}
-      <div className="p-6 border-b border-slate-800">
+      <div className="p-6 border-b border-slate-800 flex items-center justify-between">
         <Link href="/overview" className="flex items-center space-x-2">
           <Mail className="h-6 w-6 text-blue-400" />
           <span className="text-xl font-bold text-white">B2B Email Platform</span>
         </Link>
+        <button
+          onClick={handleRestartTour}
+          title="Restart onboarding guide"
+          className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-slate-700 transition-colors flex-shrink-0"
+        >
+          <BookOpen className="h-4 w-4" />
+        </button>
       </div>
 
       {/* Primary Navigation */}

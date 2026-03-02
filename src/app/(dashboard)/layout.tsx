@@ -1,6 +1,5 @@
 import Sidebar from '@/components/dashboard/Sidebar';
 import { NextStepWrapper } from '@/components/providers/nextstep-provider';
-import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist';
 
 export default function DashboardLayout({
   children,
@@ -16,7 +15,6 @@ export default function DashboardLayout({
         <main className="md:ml-64 min-h-screen p-8">
           {children}
         </main>
-        <OnboardingChecklist />
       </div>
     </NextStepWrapper>
   );
