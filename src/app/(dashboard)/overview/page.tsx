@@ -1,9 +1,11 @@
 import OverviewCalendar from '@/components/dashboard/OverviewCalendar';
 import DashboardTutorial from '@/components/dashboard/DashboardTutorial';
+import { TourAutoStart } from '@/components/onboarding/TourAutoStart';
 
 export default function OverviewPage() {
   return (
     <div className="space-y-8">
+      <TourAutoStart tourName="sidebar-tour" />
       {/* Hero Section */}
       <div className="text-center space-y-4">
         <h1 className="text-5xl font-bold text-gray-900">

@@ -68,6 +68,7 @@ export default function Sidebar() {
           return (
             <Link
               key={item.href}
+              id={`sidebar-nav-${item.href.slice(1)}`}
               href={item.href}
               className={cn(
                 'flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors',
@@ -94,6 +95,7 @@ export default function Sidebar() {
             return (
               <Link
                 key={item.href}
+                id={`sidebar-nav-${item.href.slice(1)}`}
                 href={item.href}
                 className={cn(
                   'flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors',
