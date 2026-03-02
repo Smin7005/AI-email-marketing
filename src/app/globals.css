@@ -22,6 +22,18 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.material-symbols-outlined {
+  font-variation-settings: 'wght' 200, 'opsz' 24;
+}
+
+.material-symbols-filled {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'opsz' 24;
+}
+
+.line-art-border {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
 /* FORCE CALENDAR ALIGNMENT: GRID METHOD */
 .react-calendar {
   width: 100% !important;
