@@ -1,8 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 interface AnalyticsSummary {
   totalCampaigns: number;
@@ -35,6 +46,16 @@ interface Activity {
   occurredAt: string;
 }
 
+interface ChartDataPoint {
+  label: string;
+  totalCampaigns: number;
+  totalEmails: number;
+  sentEmails: number;
+  openRate: number;
+}
+
+type ChartPeriod = '1d' | '7d' | '30d';
+
 export default function AnalyticsPage() {
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignAnalytics[]>([]);
@@ -42,9 +63,31 @@ export default function AnalyticsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('7d');
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [chartLoading, setChartLoading] = useState(false);
+
   useEffect(() => {
     fetchAnalytics();
   }, []);
+
+  const fetchChartData = useCallback(async (period: ChartPeriod) => {
+    try {
+      setChartLoading(true);
+      const response = await fetch(`/api/analytics/chart?period=${period}`);
+      if (!response.ok) return;
+      const data = await response.json();
+      setChartData(data.data || []);
+    } catch (err) {
+      console.error('Error fetching chart data:', err);
+    } finally {
+      setChartLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchChartData(chartPeriod);
+  }, [chartPeriod, fetchChartData]);
 
   const fetchAnalytics = async () => {
     try {
@@ -129,7 +172,7 @@ export default function AnalyticsPage() {
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => (
+            {[...Array(4)].map((_, i) => (
               <div key={i} className="h-32 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -137,6 +180,16 @@ export default function AnalyticsPage() {
       </div>
     );
   }
+
+  const periodLabels: Record<ChartPeriod, string> = {
+    '1d': '1D',
+    '7d': '7D',
+    '30d': '30D',
+  };
+
+  const hasChartData = chartData.some(
+    d => d.totalCampaigns > 0 || d.totalEmails > 0 || d.sentEmails > 0 || d.openRate > 0
+  );
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl">
@@ -183,44 +236,65 @@ export default function AnalyticsPage() {
               <div className="text-2xl font-bold">{summary.openRate.toFixed(1)}%</div>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Click Rate</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{summary.clickRate.toFixed(1)}%</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Bounces</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{summary.bounceCount}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Complaints</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{summary.complaintCount}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Opened Emails</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{summary.openedEmails}</div>
-            </CardContent>
-          </Card>
         </div>
       )}
+
+      {/* Trends Chart */}
+      <Card className="mb-8">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Trends</CardTitle>
+            <div className="flex gap-1">
+              {(['1d', '7d', '30d'] as ChartPeriod[]).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setChartPeriod(p)}
+                  className={`px-3 py-1 text-sm rounded-md font-medium transition-colors ${
+                    chartPeriod === p
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+                >
+                  {periodLabels[p]}
+                </button>
+              ))}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {chartLoading ? (
+            <div className="h-64 flex items-center justify-center">
+              <div className="animate-pulse h-full w-full bg-gray-100 rounded"></div>
+            </div>
+          ) : !hasChartData ? (
+            <div className="h-64 flex items-center justify-center text-gray-500 text-sm">
+              No data for this period.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <ComposedChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="#94a3b8" />
+                <YAxis yAxisId="left" tick={{ fontSize: 12 }} stroke="#94a3b8" />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} stroke="#f97316" unit="%" domain={[0, 100]} />
+                <Tooltip
+                  contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                  // @ts-expect-error recharts formatter overload mismatch
+                  formatter={(value: unknown, name: string) => {
+                    if (name === 'Open Rate') return [`${value ?? 0}%`, name];
+                    return [value ?? 0, name];
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar yAxisId="left" dataKey="totalCampaigns" name="Total Campaigns" fill="#3b82f6" radius={[2, 2, 0, 0]} />
+                <Bar yAxisId="left" dataKey="totalEmails" name="Total Emails" fill="#94a3b8" radius={[2, 2, 0, 0]} />
+                <Bar yAxisId="left" dataKey="sentEmails" name="Sent Emails" fill="#22c55e" radius={[2, 2, 0, 0]} />
+                <Line yAxisId="right" type="monotone" dataKey="openRate" name="Open Rate" stroke="#f97316" strokeWidth={2} dot={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Campaign Performance */}

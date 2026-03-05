@@ -1,4 +1,4 @@
-# vercel domains: https://ai-email-marketing.vercel.app/
+# vercel domains: https://ai-email-marketing-test.vercel.app/
 
 # responsive designing
 
@@ -202,7 +202,9 @@
 
 ## 3. Data table: 1 day, 7 days, 30 days. bottom left
 
-## 4. Delete 'Total Emails' and 'Open Rate', move activity list to bottom right. 
+## 4. Delete 'Sent Emails' and 'Open Rate', replace it with user quota. 
+
+## 5. UI of Bar chart and Activity records should be 50 - 50, bar chart on left side.
 
 # Settings 
 
@@ -234,6 +236,10 @@
  - 4. ✅ User management, such as restriction of adding domain names for free users. M
 
 ## 6. New epic: Research which SaaS is good for implementating onboarding flow of user guide in each page. EH
+### ✅ 6.1 Add a button to allow users have onboarding flow again.
+### 6.2 when user click on reset user guide button, add a pop-up window to alert user they will lost all current inputs.
+### 6.3 fix campaigns page onboarding flow.
+### 6.4 fix task list at the bottom right corner.
 
 ## 7. Redirect to dashboard page after login. H
 

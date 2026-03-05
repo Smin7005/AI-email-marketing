@@ -6,6 +6,17 @@ import { Search, Folder, Mail, BarChart2, Settings, Send, BookOpen } from 'lucid
 import { UserButton } from '@clerk/nextjs';
 import { useNextStep } from 'nextstepjs';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -15,6 +26,7 @@ export default function Sidebar() {
     Object.keys(localStorage)
       .filter(key => key.startsWith('tour-'))
       .forEach(key => localStorage.removeItem(key));
+    localStorage.removeItem('onboarding-checklist-dismissed');
     startNextStep('sidebar-tour');
   }
 
@@ -68,13 +80,28 @@ export default function Sidebar() {
           <Mail className="h-6 w-6 text-blue-400" />
           <span className="text-xl font-bold text-white">B2B Email Platform</span>
         </Link>
-        <button
-          onClick={handleRestartTour}
-          title="Restart onboarding guide"
-          className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-slate-700 transition-colors flex-shrink-0"
-        >
-          <BookOpen className="h-4 w-4" />
-        </button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              title="Restart onboarding guide"
+              className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-slate-700 transition-colors flex-shrink-0"
+            >
+              <BookOpen className="h-4 w-4" />
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Restart Onboarding Guide?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will reset your onboarding progress and restart the guide from the beginning.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleRestartTour}>Yes, restart</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {/* Primary Navigation */}
