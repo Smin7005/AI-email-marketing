@@ -27,6 +27,8 @@ export default function Sidebar() {
       .filter(key => key.startsWith('tour-'))
       .forEach(key => localStorage.removeItem(key));
     localStorage.removeItem('onboarding-checklist-dismissed');
+    localStorage.setItem('onboarding-force-restart', 'true');
+    window.dispatchEvent(new Event('onboarding-reset'));
     startNextStep('sidebar-tour');
   }
 

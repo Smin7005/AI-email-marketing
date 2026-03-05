@@ -1,4 +1,4 @@
-# vercel domains: https://ai-email-marketing-test.vercel.app/
+# vercel domains: https://www.mail-marketing.online/
 
 # responsive designing
 

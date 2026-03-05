@@ -56,23 +56,38 @@ export function OnboardingChecklist() {
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!user?.createdAt) return;
-    const isNewUser = Date.now() - user.createdAt.getTime() < NEW_USER_WINDOW_MS;
-    const isDismissed = localStorage.getItem(DISMISSED_KEY) === 'true';
-    if (!isNewUser || isDismissed) return;
-
-    const completed = new Set<string>();
-    STEPS.forEach((step) => {
-      if (localStorage.getItem(step.storageKey) === 'true') {
-        completed.add(step.id);
+    const evaluate = () => {
+      if (!user?.createdAt) return;
+      const isNewUser = Date.now() - user.createdAt.getTime() < NEW_USER_WINDOW_MS;
+      const isDismissed = localStorage.getItem(DISMISSED_KEY) === 'true';
+      const forceRestart = localStorage.getItem('onboarding-force-restart') === 'true';
+      if ((!isNewUser && !forceRestart) || isDismissed) {
+        setIsVisible(false);
+        return;
       }
-    });
-    setCompletedSteps(completed);
 
-    // Only show if not all steps are done
-    if (completed.size < STEPS.length) {
+      const completed = new Set<string>();
+      STEPS.forEach((step) => {
+        if (localStorage.getItem(step.storageKey) === 'true') {
+          completed.add(step.id);
+        }
+      });
+      setCompletedSteps(completed);
+      setIsVisible(completed.size < STEPS.length);
+    };
+
+    const handleReset = () => {
+      setCompletedSteps(new Set());
       setIsVisible(true);
-    }
+    };
+
+    evaluate();
+    window.addEventListener('onboarding-reset', handleReset);
+    window.addEventListener('tour-done', evaluate);
+    return () => {
+      window.removeEventListener('onboarding-reset', handleReset);
+      window.removeEventListener('tour-done', evaluate);
+    };
   }, [user]);
 
   if (!isVisible) return null;

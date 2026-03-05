@@ -18,7 +18,8 @@ export function TourAutoStart({ tourName }: TourAutoStartProps) {
     if (!user?.createdAt) return;
     const isNewUser = Date.now() - user.createdAt.getTime() < NEW_USER_WINDOW_MS;
     const hasSeenTour = localStorage.getItem(`tour-${tourName}-done`) === 'true';
-    if (isNewUser && !hasSeenTour) {
+    const forceRestart = localStorage.getItem('onboarding-force-restart') === 'true';
+    if ((isNewUser || forceRestart) && !hasSeenTour) {
       const timer = setTimeout(() => startNextStep(tourName), 800);
       return () => clearTimeout(timer);
     }

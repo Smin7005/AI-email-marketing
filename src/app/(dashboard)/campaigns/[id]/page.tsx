@@ -60,7 +60,8 @@ export default function CampaignDetailPage() {
     if (!user?.createdAt) return;
     const isNewUser = Date.now() - user.createdAt.getTime() < NEW_USER_WINDOW_MS;
     const hasSeenTour = localStorage.getItem('tour-campaign-detail-tour-done') === 'true';
-    if (isNewUser && !hasSeenTour) {
+    const forceRestart = localStorage.getItem('onboarding-force-restart') === 'true';
+    if ((isNewUser || forceRestart) && !hasSeenTour) {
       const timer = setTimeout(() => startNextStep('campaign-detail-tour'), 800);
       return () => clearTimeout(timer);
     }

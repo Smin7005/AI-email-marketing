@@ -35,7 +35,8 @@ export default function SendersPage() {
     if (!user?.createdAt) return;
     const isNewUser = Date.now() - user.createdAt.getTime() < NEW_USER_WINDOW_MS;
     const hasSeenTour = localStorage.getItem('tour-senders-tour-done') === 'true';
-    if (isNewUser && !hasSeenTour) {
+    const forceRestart = localStorage.getItem('onboarding-force-restart') === 'true';
+    if ((isNewUser || forceRestart) && !hasSeenTour) {
       const timer = setTimeout(() => startNextStep('senders-tour'), 800);
       return () => clearTimeout(timer);
     }
