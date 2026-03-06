@@ -237,9 +237,10 @@
 
 ## 6. New epic: Research which SaaS is good for implementating onboarding flow of user guide in each page. EH
 ### ✅ 6.1 Add a button to allow users have onboarding flow again.
-### 6.2 when user click on reset user guide button, add a pop-up window to alert user they will lost all current inputs.
-### 6.3 fix campaigns page onboarding flow.
-### 6.4 fix task list at the bottom right corner.
+### ✅ 6.2 When user click on reset user guide button, add a pop-up window to alert user they will lost all current inputs.
+### 6.3 Fix campaigns page onboarding flow, first step is missing.
+### 6.4 Modify last step of collection tab onboarding flow to the top of the page. 
+### 6.5 Repair task list at the bottom right corner.
 
 ## 7. Redirect to dashboard page after login. H
 

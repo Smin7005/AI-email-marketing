@@ -114,7 +114,7 @@ export default async function LeadsPage({
       )}
 
       {/* Results Summary with Pagination Info */}
-      <div className="flex items-center justify-between">
+      <div id="leads-results-summary" className="flex items-center justify-between">
         <div className="text-sm text-gray-600">
           {totalCount > 0 ? (
             <>

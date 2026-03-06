@@ -106,7 +106,7 @@ export function OnboardingChecklist() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-80">
+    <div className="fixed bottom-6 right-6 z-50 w-80 max-h-[calc(100vh-6rem)] overflow-y-auto">
       <Card className="shadow-xl border border-gray-200">
         <CardHeader className="pb-2 pt-4 px-4">
           <div className="flex items-center justify-between">
