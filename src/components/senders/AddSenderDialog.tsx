@@ -1,6 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useNextStep } from 'nextstepjs';
+import { useUser } from '@clerk/nextjs';
+
+const NEW_USER_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 import {
   Dialog,
   DialogContent,
@@ -32,6 +36,19 @@ interface AddSenderDialogProps {
 export function AddSenderDialog({ open, onOpenChange, onSuccess }: AddSenderDialogProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [activeTab, setActiveTab] = useState<string>('personal');
+  const { startNextStep } = useNextStep();
+  const { user } = useUser();
+
+  useEffect(() => {
+    if (!open || !user?.createdAt) return;
+    const isNewUser = Date.now() - user.createdAt.getTime() < NEW_USER_WINDOW_MS;
+    const hasSeenTour = localStorage.getItem('tour-add-sender-dialog-tour-done') === 'true';
+    const forceRestart = localStorage.getItem('onboarding-force-restart') === 'true';
+    if ((isNewUser || forceRestart) && !hasSeenTour) {
+      const timer = setTimeout(() => startNextStep('add-sender-dialog-tour'), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [open, user, startNextStep]);
   const [emailAddress, setEmailAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -165,11 +182,11 @@ export function AddSenderDialog({ open, onOpenChange, onSuccess }: AddSenderDial
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="personal" className="flex items-center gap-1.5">
+                <TabsTrigger id="add-sender-tab-personal" value="personal" className="flex items-center gap-1.5">
                   <Mail className="h-4 w-4" />
                   Personal Email
                 </TabsTrigger>
-                <TabsTrigger value="domain" className="flex items-center gap-1.5">
+                <TabsTrigger id="add-sender-tab-domain" value="domain" className="flex items-center gap-1.5">
                   <Globe className="h-4 w-4" />
                   Custom Domain
                 </TabsTrigger>

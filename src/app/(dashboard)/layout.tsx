@@ -1,6 +1,7 @@
 import Sidebar from '@/components/dashboard/Sidebar';
 import { NextStepWrapper } from '@/components/providers/nextstep-provider';
 import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist';
+import { TourChainer } from '@/components/onboarding/TourChainer';
 
 export default function DashboardLayout({
   children,
@@ -18,6 +19,7 @@ export default function DashboardLayout({
         </main>
       </div>
       <OnboardingChecklist />
+      <TourChainer />
     </NextStepWrapper>
   );
 }

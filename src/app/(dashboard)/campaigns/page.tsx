@@ -1,9 +1,14 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Plus, ArrowLeft } from 'lucide-react';
+import { useNextStep } from 'nextstepjs';
+import { useUser } from '@clerk/nextjs';
+
+const NEW_USER_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +27,19 @@ interface Campaign {
 
 export default function CampaignsPage() {
   const router = useRouter();
+  const { startNextStep } = useNextStep();
+  const { user } = useUser();
+
+  useEffect(() => {
+    if (!user?.createdAt) return;
+    const isNewUser = Date.now() - user.createdAt.getTime() < NEW_USER_WINDOW_MS;
+    const hasSeenTour = localStorage.getItem('tour-campaigns-list-tour-done') === 'true';
+    const forceRestart = localStorage.getItem('onboarding-force-restart') === 'true';
+    if ((isNewUser || forceRestart) && !hasSeenTour) {
+      const timer = setTimeout(() => startNextStep('campaigns-list-tour'), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [user, startNextStep]);
 
   const {
     data: responseData,

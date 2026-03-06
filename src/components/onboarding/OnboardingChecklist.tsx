@@ -19,32 +19,25 @@ interface ChecklistStep {
 
 const STEPS: ChecklistStep[] = [
   {
-    id: 'sender',
-    title: 'Add Your Sender Email',
-    description: 'Set up an email address to send campaigns from.',
-    href: '/senders',
-    storageKey: 'tour-senders-tour-done',
-  },
-  {
-    id: 'leads',
-    title: 'Find Your First Leads',
-    description: 'Search 50,000+ Australian businesses to target.',
-    href: '/leads',
-    storageKey: 'tour-leads-tour-done',
-  },
-  {
-    id: 'collection',
-    title: 'Create a Collection',
-    description: 'Save selected businesses as a recipient list.',
-    href: '/collections',
-    storageKey: 'tour-collections-tour-done',
+    id: 'overview',
+    title: 'Website Overview',
+    description: 'Take a quick tour of the platform.',
+    href: '/overview',
+    storageKey: 'tour-sidebar-tour-done',
   },
   {
     id: 'campaign',
     title: 'Launch Your First Campaign',
-    description: 'Generate AI emails and send your first campaign.',
-    href: '/campaigns/create?new=true',
-    storageKey: 'tour-create-campaign-tour-done',
+    description: 'Find leads, build a collection, and send your first AI campaign.',
+    href: '/campaigns',
+    storageKey: 'tour-campaigns-list-tour-done',
+  },
+  {
+    id: 'sender',
+    title: 'Add Your Sender',
+    description: 'Connect a personal email or custom domain to send campaigns from.',
+    href: '/senders',
+    storageKey: 'tour-add-sender-dialog-tour-done',
   },
 ];
 

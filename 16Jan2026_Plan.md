@@ -241,6 +241,8 @@
 ### 6.3 Fix campaigns page onboarding flow, first step is missing.
 ### 6.4 Modify last step of collection tab onboarding flow to the top of the page. 
 ### 6.5 Repair task list at the bottom right corner.
+### 6.6 Guide user to create a new collection on Leads tab, after Leads tab onboarding flow is finished.
+### 6.7 Guide user to input their personal email and recipient name on Campaigns tab.
 
 ## 7. Redirect to dashboard page after login. H
 
